@@ -42,10 +42,11 @@ header.mast{ background:var(--secondary); position:relative; padding:34px 20px 2
 .mast-sub{ font-size:12px; color:rgba(255,255,255,0.6); margin:0; text-align:center; }
 .mast-rule{ height:2px; background:var(--primary); position:absolute; bottom:0; left:0; right:0; }
 @media (max-width:480px){
-  header.mast{ padding:28px 14px 22px; }
+  header.mast{ padding:18px 14px 14px; }
   .mast-title{ flex-direction:column; align-items:center; justify-content:center; gap:2px; white-space:normal; }
   .mast-title-sub, .mast-title-main{ white-space:nowrap; }
   .mast-sub{ white-space:nowrap; overflow:hidden; }
+  .sheet-title-bar{ justify-content:flex-start; }
 }
 
 .page{ max-width:1280px; margin:0 auto; padding:32px 20px 64px; }
@@ -128,6 +129,7 @@ input:focus, select:focus{ outline:none; border-color:var(--primary); box-shadow
 #captureArea.exporting{ max-height:none; overflow:visible; }
 #captureArea.exporting .date-chip{ background:none; border:none; width:auto; height:auto; padding:0; }
 #captureArea.exporting .date-display{ font-size:19px; font-weight:800; }
+#captureArea.exporting .sheet-title-bar{ justify-content:center !important; }
 #captureArea.exporting table.board{ font-size:18px; }
 #captureArea.exporting .titlebar-title{ font-size:26px; }
 #captureArea.exporting table.board thead th{ font-size:18px; }
@@ -146,11 +148,11 @@ input:focus, select:focus{ outline:none; border-color:var(--primary); box-shadow
   padding:0; text-align:center; font-size:clamp(17px, 2.6vw, 24px); flex:0 1 auto; width:auto; white-space:nowrap;
 }
 .date-chip{
-  position:relative; flex:0 0 auto; width:80px; height:30px; display:flex; align-items:center; justify-content:center;
+  position:relative; flex:0 0 auto; width:92px; height:34px; display:flex; align-items:center; justify-content:center;
   background:#0B4F86; border:1px solid rgba(255,255,255,0.4); border-radius:4px; overflow:hidden;
 }
 .date-native{ position:absolute; inset:0; width:100%; height:100%; opacity:0; border:none; cursor:pointer; padding:0; margin:0; }
-.date-display{ pointer-events:none; color:#fff; font-size:11px; font-weight:700; letter-spacing:0.2px; white-space:nowrap; }
+.date-display{ pointer-events:none; color:#fff; font-size:12px; font-weight:700; letter-spacing:0.2px; white-space:nowrap; }
 .titlebar-title:focus{
   outline:none; background:rgba(255,255,255,0.22); border-radius:4px;
 }
@@ -326,7 +328,7 @@ table.board td input[type="number"]::-webkit-inner-spin-button{ -webkit-appearan
       </div>
     </div>
     <div class="btn-row">
-      <button class="btn lg" id="addRosterBtn">명단에 등록<br><span style="font-size:0.75em;font-weight:500;">(시트에 바로 반영)</span></button>
+      <button class="btn lg" id="addRosterBtn">명단에 등록<br><span style="font-size:0.75em;font-weight:500;">시트에 바로 반영</span></button>
       <button class="btn navy lg" id="toggleRosterBtn" type="button"></button>
     </div>
     <div id="rosterGroups" style="margin-top:14px; display:none;"></div>
@@ -948,7 +950,7 @@ table.board td input[type="number"]::-webkit-inner-spin-button{ -webkit-appearan
     var baseSize = 30;
     var w = measureTextWidth(main.textContent, mainCS.fontWeight + " " + baseSize + "px " + mainCS.fontFamily);
     if(w > 0 && subWidth > 0){
-      var newSize = Math.max(18, Math.min((subWidth / w) * baseSize, 60));
+      var newSize = Math.max(16, Math.min((subWidth / w) * baseSize * 0.8, 40));
       main.style.fontSize = newSize + "px";
     }
     // 안내 문구가 한 줄에 들어가도록 폭에 맞춰 글자 크기를 줄인다.
@@ -989,7 +991,7 @@ table.board td input[type="number"]::-webkit-inner-spin-button{ -webkit-appearan
         var dist = getDistance(e.touches);
         if(pinch.startDist > 0){
           var scale = pinch.startZoom * (dist / pinch.startDist);
-          scale = Math.min(Math.max(scale, 0.6), 2.5);
+          scale = Math.min(Math.max(scale, 0.4), 2.5);
           sheetEl.style.zoom = scale;
         }
       }
