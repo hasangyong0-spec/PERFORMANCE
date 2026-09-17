@@ -74,6 +74,11 @@ input[type="text"], input[type="number"], input[type="date"], select{
 input:focus, select:focus{ outline:none; border-color:var(--primary); box-shadow:0 0 0 2px rgba(245,130,32,0.15); }
 .row2{ display:grid; grid-template-columns:1fr 1fr; gap:10px; }
 .row3{ display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; }
+@media (max-width:520px){
+  .row2, .row3{ grid-template-columns:1fr; }
+  .page{ padding-left:14px; padding-right:14px; }
+  .panel{ padding-left:14px; padding-right:14px; }
+}
 
 .btn{
   display:inline-flex; align-items:center; justify-content:center; gap:6px;
@@ -505,7 +510,7 @@ table.board td input[type="number"]::-webkit-inner-spin-button{ -webkit-appearan
 
   function renderSheet(){
     document.getElementById("captionText").textContent =
-      state.title + (state.date ? (" _ " + formatDate(state.date)) : "");
+      (state.date ? (formatDate(state.date) + " ") : "") + state.title;
 
     var body = document.getElementById("boardBody");
     body.innerHTML = "";
@@ -669,7 +674,7 @@ table.board td input[type="number"]::-webkit-inner-spin-button{ -webkit-appearan
     var values = snap.values || {};
     var teams = getTeamsFromRoster(roster);
     var total = roster.length;
-    var caption = (snap.title || "") + (dateStr ? (" _ " + formatDate(dateStr)) : "");
+    var caption = (dateStr ? (formatDate(dateStr) + " ") : "") + (snap.title || "");
 
     var thead =
       '<thead><tr>' +
