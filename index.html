@@ -46,7 +46,6 @@ header.mast{ background:var(--secondary); position:relative; padding:34px 20px 2
   .mast-title{ flex-direction:column; align-items:center; justify-content:center; gap:2px; white-space:normal; }
   .mast-title-sub, .mast-title-main{ white-space:nowrap; }
   .mast-sub{ white-space:nowrap; overflow:hidden; }
-  .sheet-title-bar{ justify-content:flex-start; }
 }
 
 .page{ max-width:1280px; margin:0 auto; padding:32px 20px 64px; }
@@ -142,6 +141,9 @@ input:focus, select:focus{ outline:none; border-color:var(--primary); box-shadow
   position:sticky; top:0; z-index:3; background:var(--secondary); width:100%; min-width:1280px; box-sizing:border-box;
   display:flex; align-items:center; justify-content:center; gap:10px;
   height:56px; padding:0 12px;
+}
+@media (max-width:480px){
+  .sheet-title-bar{ justify-content:flex-start; }
 }
 .titlebar-title{
   border:none; background:transparent; color:#fff; font-weight:800; letter-spacing:0.2px;
