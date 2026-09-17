@@ -132,6 +132,11 @@ input:focus, select:focus{ outline:none; border-color:var(--primary); box-shadow
   background:rgba(4,59,114,0.88); color:#fff; font-size:11px; font-weight:600;
   padding:4px 9px; border-radius:12px; pointer-events:none; white-space:nowrap;
 }
+.share-status{
+  font-size:11.5px; font-weight:600; margin-bottom:8px; padding:5px 10px; border-radius:4px; display:none;
+}
+.share-status.shared{ display:inline-block; background:#E3F3EA; color:#1E7A42; }
+.share-status.local{ display:inline-block; background:#F4EFE0; color:#8A6D1F; }
 @media (max-width:480px){
   .zoom-hint{ display:inline-block; }
 }
@@ -287,6 +292,7 @@ table.board td input[type="number"]::-webkit-inner-spin-button{ -webkit-appearan
 
 <div class="page">
   <div class="panel" style="position:relative;">
+    <div id="shareStatus" class="share-status"></div>
     <span class="zoom-hint">🤏 손가락으로 확대·축소</span>
     <div id="captureArea">
       <div class="sheet-title-bar">
@@ -398,7 +404,10 @@ table.board td input[type="number"]::-webkit-inner-spin-button{ -webkit-appearan
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-<script>
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+import { getDatabase, ref, onValue, set, update, remove, get, child }
+  from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 (function(){
   "use strict";
 
@@ -443,6 +452,136 @@ table.board td input[type="number"]::-webkit-inner-spin-button{ -webkit-appearan
   function withIds(list){ return list.map(function(m){ return Object.assign({id:uid()}, m); }); }
   function uid(){ return "e" + Date.now() + Math.floor(Math.random()*1000); }
 
+  // ---------- shared realtime db (Firebase Realtime Database — 지난번 일정표와 같은 프로젝트) ----------
+  var firebaseConfig = {
+    apiKey: "AIzaSyAaxt7b0uZ7_Dkeed9X4rOX3nUiMbjC_-A",
+    authDomain: "mirae-daegu.firebaseapp.com",
+    databaseURL: "https://mirae-daegu-default-rtdb.firebaseio.com",
+    projectId: "mirae-daegu",
+    storageBucket: "mirae-daegu.firebasestorage.app",
+    messagingSenderId: "214878140482",
+    appId: "1:214878140482:web:dd144948484eb5c96855db",
+    measurementId: "G-5RCL5PF1YB"
+  };
+  var fbApp = initializeApp(firebaseConfig);
+  var fbDb = getDatabase(fbApp);
+  var ROOT = "daegu_wm_praise_board_v1";
+  var rosterRef = ref(fbDb, ROOT + "/roster");
+  function recordsRef(date){ return ref(fbDb, ROOT + "/records/" + date); }
+
+  var dbReady = false;
+  var rosterSeeded = false;
+  var valuesUnsub = null;
+  var writeTimers = {};
+
+  function setShareStatus(mode){
+    var el = document.getElementById("shareStatus");
+    if(!el) return;
+    if(mode === "shared"){
+      el.textContent = "🔗 실시간 공유 연결됨";
+      el.className = "share-status shared";
+    } else if(mode === "connecting"){
+      el.textContent = "연결 확인 중...";
+      el.className = "share-status local";
+    } else {
+      el.textContent = "연결 끊김 · 재연결 중";
+      el.className = "share-status local";
+    }
+  }
+
+  function rosterAdd(m){
+    set(child(rosterRef, m.id), { team: m.team, name: m.name, position: m.position }).catch(function(){
+      showToast("명단 저장에 실패했어요");
+    });
+  }
+
+  function rosterRemove(id){
+    remove(child(rosterRef, id)).catch(function(){
+      showToast("삭제에 실패했어요");
+    });
+  }
+
+  function saveValueFieldToDb(id, field, value){
+    var key = state.date + "|" + id;
+    if(writeTimers[key]) clearTimeout(writeTimers[key]);
+    writeTimers[key] = setTimeout(function(){
+      delete writeTimers[key];
+      var patch = {}; patch[field] = value;
+      update(child(recordsRef(state.date), id), patch).catch(function(){
+        showToast("저장에 실패했어요. 연결을 확인해 주세요");
+      });
+    }, 400);
+  }
+
+  function subscribeRoster(){
+    onValue(rosterRef, function(snap){
+      var val = snap.val();
+      if(!val){
+        if(!rosterSeeded){
+          rosterSeeded = true;
+          var seed = {};
+          withIds(DEFAULT_ROSTER).forEach(function(m){
+            seed[m.id] = { team: m.team, name: m.name, position: m.position };
+          });
+          set(rosterRef, seed);
+        }
+        return;
+      }
+      state.roster = Object.keys(val).map(function(id){
+        var d = val[id] || {};
+        return { id: id, team: d.team || "", name: d.name || "", position: d.position || "" };
+      });
+      renderRoster();
+      renderSheet();
+    }, function(){
+      showToast("명단 실시간 동기화에 문제가 생겼어요");
+    });
+  }
+
+  function subscribeValuesForDate(date){
+    if(valuesUnsub){ valuesUnsub(); valuesUnsub = null; }
+    valuesUnsub = onValue(recordsRef(date), function(snap){
+      if(date !== state.date) return; // 이미 다른 날짜로 넘어간 뒤 도착한 응답은 무시
+      var values = snap.val() || {};
+      ensureRecord(date).values = values;
+      applyValuesToInputs(values);
+      updateTotals();
+    }, function(){
+      showToast("실적 실시간 동기화에 문제가 생겼어요");
+    });
+  }
+
+  function applyValuesToInputs(values){
+    var body = document.getElementById("boardBody");
+    if(!body) return;
+    body.querySelectorAll("input[data-field], textarea[data-field]").forEach(function(el){
+      if(document.activeElement === el) return; // 지금 입력 중인 칸은 건드리지 않는다
+      var id = el.getAttribute("data-id");
+      var field = el.getAttribute("data-field");
+      var v = values[id] || {};
+      var val = v[field];
+      if(field === "detail"){
+        el.value = val || "";
+        autoGrow(el);
+      } else {
+        var display = (val === undefined || val === null || val === 0) ? "" : val;
+        el.value = display;
+        var unitEl = el.parentElement.querySelector(".unit");
+        if(unitEl) unitEl.style.display = display !== "" ? "inline" : "none";
+      }
+    });
+  }
+
+  function initSharedDb(){
+    setShareStatus("connecting");
+    onValue(ref(fbDb, ".info/connected"), function(snap){
+      setShareStatus(snap.val() === true ? "shared" : "connecting");
+    });
+    dbReady = true;
+    subscribeRoster();
+    subscribeValuesForDate(state.date);
+  }
+
   var state = {
     title: "투자센터대구WM 칭찬게시판",
     date: "",
@@ -467,9 +606,6 @@ table.board td input[type="number"]::-webkit-inner-spin-button{ -webkit-appearan
       (list || []).forEach(function(m){ if(fixes[m.name]) m.name = fixes[m.name]; });
     }
     fix(state.roster);
-    Object.keys(state.recordsByDate || {}).forEach(function(d){
-      fix(state.recordsByDate[d].roster);
-    });
   }
   function saveState(){
     try{
@@ -485,18 +621,13 @@ table.board td input[type="number"]::-webkit-inner-spin-button{ -webkit-appearan
     showToast._tm = setTimeout(function(){ el.classList.remove("show"); }, 1500);
   }
 
-  // 날짜별로 그 시점의 명단(roster)과 실적(values)을 함께 기록해서,
-  // 나중에 명단이 바뀌어도 과거 날짜에 입력된 직원 목록은 그대로 남도록 한다.
+  // 날짜별로 그날의 실적(values)만 따로 기록한다. 명단(roster)은 이제 항상 공유되는
+  // 하나의 최신 명단이며(팀원끼리 실시간으로 함께 관리), 날짜별로 얼리지 않는다.
   function ensureRecord(date){
     if(!state.recordsByDate[date]){
-      state.recordsByDate[date] = { roster: JSON.parse(JSON.stringify(state.roster)), values: {} };
+      state.recordsByDate[date] = { values: {} };
     }
     return state.recordsByDate[date];
-  }
-  function isToday(date){ return date === todayStr(); }
-  function syncTodayRecord(){
-    var rec = ensureRecord(todayStr());
-    rec.roster = JSON.parse(JSON.stringify(state.roster));
   }
 
   function getVal(id){
@@ -548,10 +679,7 @@ table.board td input[type="number"]::-webkit-inner-spin-button{ -webkit-appearan
         var btn = document.createElement("button");
         btn.textContent = "\u00d7";
         btn.addEventListener("click", function(){
-          state.roster = state.roster.filter(function(x){ return x.id !== m.id; });
-          syncTodayRecord();
-          delete ensureRecord(todayStr()).values[m.id];
-          saveState(); renderRoster(); renderSheet();
+          rosterRemove(m.id);
         });
         chip.appendChild(btn);
         chipList.appendChild(chip);
@@ -568,12 +696,8 @@ table.board td input[type="number"]::-webkit-inner-spin-button{ -webkit-appearan
     if(!name){ showToast("직원명을 입력해주세요"); return; }
     var dup = state.roster.some(function(m){ return m.team === team && m.name === name; });
     if(dup){ showToast("이미 등록된 이름이에요"); return; }
-    state.roster.push({ id: uid(), team: team, name: name, position: position });
+    rosterAdd({ id: uid(), team: team, name: name, position: position });
     document.getElementById("rosterNameInput").value = "";
-    syncTodayRecord();
-    saveState();
-    renderRoster();
-    renderSheet();
     showToast("명단에 등록하고 시트에 반영했어요");
   });
   document.getElementById("rosterNameInput").addEventListener("keydown", function(e){
@@ -610,9 +734,7 @@ table.board td input[type="number"]::-webkit-inner-spin-button{ -webkit-appearan
   }
 
   function renderSheet(){
-    if(isToday(state.date)) syncTodayRecord();
-    var record = ensureRecord(state.date);
-    var rosterForSheet = record.roster;
+    var rosterForSheet = state.roster;
 
     var body = document.getElementById("boardBody");
     body.innerHTML = "";
@@ -689,11 +811,14 @@ table.board td input[type="number"]::-webkit-inner-spin-button{ -webkit-appearan
     var field = el.getAttribute("data-field");
     if(!id || !field) return;
     var v = getVal(id);
+    var newVal;
     if(field === "detail"){
       v.detail = el.value;
+      newVal = el.value;
       autoGrow(el);
     } else if(el.tagName === "INPUT"){
       v[field] = parseFloat(el.value) || 0;
+      newVal = v[field];
       var unitEl = el.parentElement.querySelector(".unit");
       if(unitEl) unitEl.style.display = (el.value !== "" && parseFloat(el.value) !== 0) ? "inline" : "none";
     } else {
@@ -701,6 +826,7 @@ table.board td input[type="number"]::-webkit-inner-spin-button{ -webkit-appearan
     }
     saveState();
     updateTotals();
+    saveValueFieldToDb(id, field, newVal);
   });
 
   function autoGrow(el){
@@ -791,6 +917,7 @@ table.board td input[type="number"]::-webkit-inner-spin-button{ -webkit-appearan
   function pickDate(iso){
     state.date = iso;
     saveState(); updateDateDisplay(); renderSheet();
+    subscribeValuesForDate(iso);
     showToast(formatDate(state.date) + " 실적을 불러왔어요");
     closeCalendar();
   }
@@ -1033,32 +1160,16 @@ table.board td input[type="number"]::-webkit-inner-spin-button{ -webkit-appearan
   var BACKUP_KEY = STORAGE_KEY + "_backup";
 
   document.getElementById("resetAllBtn").addEventListener("click", function(){
-    showConfirm("입력한 모든 실적 값을 초기화할까요? (직원 명단은 그대로 유지돼요)", function(){
-      try{ localStorage.setItem(BACKUP_KEY, JSON.stringify(state)); }catch(e){}
-      state.recordsByDate = {};
-      saveState();
-      renderSheet();
-      showToast("실적 입력값을 초기화했어요. 명단은 그대로 유지됩니다. 실수라면 '이전으로 되돌리기'를 눌러주세요");
+    showConfirm("지금 보이는 날짜의 실적 값을 초기화할까요? (직원 명단은 유지되고, 모두에게 반영돼요)", function(){
+      remove(recordsRef(state.date)).catch(function(){
+        showToast("초기화에 실패했어요");
+      });
+      showToast("이 날짜의 실적을 초기화했어요");
     });
   });
 
   document.getElementById("undoResetBtn").addEventListener("click", function(){
-    var raw = null;
-    try{ raw = localStorage.getItem(BACKUP_KEY); }catch(e){}
-    if(!raw){ showToast("되돌릴 이전 상태가 없어요"); return; }
-    showConfirm("초기화하기 전 상태로 되돌릴까요?", function(){
-      try{
-        state = JSON.parse(raw);
-        migrateFixNames();
-        saveState();
-        updateDateDisplay();
-        renderRoster();
-        renderSheet();
-        showToast("이전 상태로 되돌렸어요");
-      }catch(e){
-        showToast("되돌리기에 실패했어요");
-      }
-    });
+    showToast("실시간 공유 모드에서는 되돌리기를 지원하지 않아요. 대신 엑셀 백업을 활용해 주세요");
   });
 
 
@@ -1161,9 +1272,9 @@ table.board td input[type="number"]::-webkit-inner-spin-button{ -webkit-appearan
   // ---------- data backup / restore as Excel: 날짜별로 시트를 나눠 화면 그대로의 표 형태로 저장 ----------
   var EXCEL_HEADERS = ["팀명","직원명","직급","수익(만원)","주식매매_해외(억)","주식매매_국내(억)","자산증대_해외(억)","자산증대_국내(억)","연금자산(억)","금융상품(억)","Wrap_금액(억)","Wrap_건수","상세내용"];
 
-  function buildDateSheet(rec){
-    var roster = rec.roster || [];
-    var values = rec.values || {};
+  function buildDateSheet(roster, values){
+    roster = roster || [];
+    values = values || {};
     var teams = getTeamsFor(roster);
     var aoa = [EXCEL_HEADERS];
     var merges = [];
@@ -1199,11 +1310,15 @@ table.board td input[type="number"]::-webkit-inner-spin-button{ -webkit-appearan
 
   document.getElementById("exportBackupBtn").addEventListener("click", function(){
     if(typeof XLSX === "undefined"){ showToast("엑셀 라이브러리를 불러오지 못했어요"); return; }
-    try{
+    showToast("엑셀 파일을 만들고 있어요...");
+    get(ref(fbDb, ROOT + "/records")).then(function(snap){
+      var all = snap.val() || {};
+      var dates = Object.keys(all).sort();
+      if(dates.indexOf(state.date) === -1) dates.push(state.date);
       var wb = XLSX.utils.book_new();
-      var dates = Object.keys(state.recordsByDate).sort();
       dates.forEach(function(date){
-        var ws = buildDateSheet(state.recordsByDate[date]);
+        var values = all[date] || {};
+        var ws = buildDateSheet(state.roster, values);
         XLSX.utils.book_append_sheet(wb, ws, date);
       });
       var rosterRows = state.roster.map(function(m){
@@ -1212,9 +1327,9 @@ table.board td input[type="number"]::-webkit-inner-spin-button{ -webkit-appearan
       XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(rosterRows), "직원명단");
       XLSX.writeFile(wb, "praise-board-backup_" + todayStr() + ".xlsx");
       showToast("엑셀 파일로 저장했어요");
-    }catch(e){
+    }).catch(function(){
       showToast("엑셀 파일 저장에 실패했어요");
-    }
+    });
   });
 
   document.getElementById("importBackupBtn").addEventListener("click", function(){
@@ -1285,23 +1400,27 @@ table.board td input[type="number"]::-webkit-inner-spin-button{ -webkit-appearan
             newRoster.push({ id: getId(team, name), team: team, name: name, position: position });
           });
           if(newRoster.length === 0){
-            // 직원명단 시트가 없으면 최근 날짜 시트의 명단을 대신 사용한다.
+            // 직원명단 시트가 없으면 가장 최근 날짜 시트의 명단을 대신 사용한다.
             var lastDate = Object.keys(newRecords).sort().pop();
             if(lastDate) newRoster = newRecords[lastDate].roster.slice();
           }
 
-          state = {
-            title: "투자센터대구WM 칭찬게시판",
-            date: todayStr(),
-            roster: newRoster.length ? newRoster : state.roster,
-            recordsByDate: newRecords
-          };
-          migrateFixNames();
-          saveState();
-          updateDateDisplay();
-          renderRoster();
-          renderSheet();
-          showToast("엑셀 백업 파일을 불러왔어요");
+          showToast("엑셀 내용을 공유 게시판에 반영하고 있어요...");
+          var writes = [];
+          newRoster.forEach(function(m){
+            writes.push(set(child(rosterRef, m.id), { team: m.team, name: m.name, position: m.position }));
+          });
+          Object.keys(newRecords).forEach(function(date){
+            var rec = newRecords[date];
+            Object.keys(rec.values).forEach(function(id){
+              writes.push(set(child(recordsRef(date), id), rec.values[id]));
+            });
+          });
+          Promise.all(writes).then(function(){
+            showToast("엑셀 백업 파일을 공유 게시판에 불러왔어요");
+          }).catch(function(){
+            showToast("일부 항목을 반영하지 못했어요");
+          });
         });
       }catch(err){
         showToast("엑셀 파일을 읽는 데 실패했어요");
@@ -1322,6 +1441,7 @@ table.board td input[type="number"]::-webkit-inner-spin-button{ -webkit-appearan
   applyStickyOffsets();
   adjustMastheadForMobile();
   saveState();
+  initSharedDb();
 })();
 </script>
 </body>
