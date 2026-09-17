@@ -122,7 +122,7 @@ input:focus, select:focus{ outline:none; border-color:var(--primary); box-shadow
 .table-toolbar{ display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; flex-wrap:wrap; gap:10px; }
 .table-toolbar .btn-row{ margin-top:0; }
 
-#captureArea{ background:#ffffff; border-radius:4px; border:1px solid var(--hairline-soft); max-height:70vh; overflow:auto; position:relative; }
+#captureArea{ background:#ffffff; border-radius:4px; border:1px solid var(--hairline-soft); max-height:70vh; overflow:auto; position:relative; touch-action:pan-x pan-y pinch-zoom; }
 #captureArea.exporting{ max-height:none; overflow:visible; }
 #captureArea.exporting .date-chip{ background:none; border:none; width:auto; height:auto; padding:0; }
 #captureArea.exporting .date-display{ font-size:19px; font-weight:800; }
@@ -159,7 +159,7 @@ table.board caption{
   border:1px solid var(--secondary); letter-spacing:0.2px;
 }
 table.board th, table.board td{ border:1px solid var(--hairline); padding:5px 4px; text-align:center; vertical-align:middle; }
-table.board thead th{ position:sticky; top:56px; z-index:2; background:var(--primary-soft); font-weight:700; font-size:13px; color:#1A1A1A; }
+table.board thead th{ position:sticky; top:56px; z-index:2; background:var(--primary-soft); font-weight:700; font-size:13px; color:#1A1A1A; white-space:nowrap; }
 table.board td.branch{ background:var(--surface-soft); font-weight:700; writing-mode:vertical-rl; text-orientation:mixed; letter-spacing:1px; white-space:nowrap; }
 table.board td.team{ background:var(--surface-soft); font-weight:700; white-space:nowrap; }
 table.board td.name{ background:var(--surface-subtle); font-weight:600; white-space:nowrap; }
@@ -249,14 +249,14 @@ table.board td input[type="number"]::-webkit-inner-spin-button{ -webkit-appearan
           <col style="width:68px">
           <col style="width:82px">
           <col style="width:78px">
-          <col style="width:56px">
-          <col style="width:56px">
-          <col style="width:56px">
-          <col style="width:56px">
-          <col style="width:56px">
-          <col style="width:56px">
-          <col style="width:56px">
-          <col style="width:56px">
+          <col style="width:66px">
+          <col style="width:66px">
+          <col style="width:66px">
+          <col style="width:66px">
+          <col style="width:66px">
+          <col style="width:66px">
+          <col style="width:66px">
+          <col style="width:66px">
           <col>
         </colgroup>
         <thead>
@@ -283,9 +283,9 @@ table.board td input[type="number"]::-webkit-inner-spin-button{ -webkit-appearan
     </div>
     <p class="hint">※ 위 제목줄의 날짜 칩을 누르면 그 날짜의 실적을 불러와서 보여줘요. 값을 입력하면 지금 선택된 날짜에 자동으로 저장되니, 다른 날짜를 골랐다가 다시 돌아와도 그대로 남아있어요. 그 날짜에 있던 직원 명단도 그대로 함께 기록되므로, 나중에 직원 명단이 바뀌어도 지난 날짜의 시트에는 그날 등록되어 있던 직원 그대로 남아요. 왼쪽에서 직원을 등록하면 오늘 시트에 바로 행이 생기고, 각 칸(수익, 주식매매, 자산증대, 연금자산, 금융상품, Wrap, 상세내용)을 눌러 직접 입력하면 실시간으로 저장되고 합계도 자동 계산돼요.</p>
     <div class="btn-row">
-      <button class="btn soft" id="tempSaveBtn">현재 실적 저장</button>
-      <button class="btn soft" id="resetAllBtn">전체 초기화</button>
-      <button class="btn soft" id="undoResetBtn">이전으로 되돌리기</button>
+      <button class="btn soft" id="tempSaveBtn">현재 실적<br>저장하기</button>
+      <button class="btn soft" id="resetAllBtn">전체<br>초기화</button>
+      <button class="btn soft" id="undoResetBtn">이전으로<br>되돌리기</button>
     </div>
     <button class="btn block big" id="downloadBtn">최종 칭찬게시판 이미지로 만들기</button>
   </div>
@@ -706,7 +706,7 @@ table.board td input[type="number"]::-webkit-inner-spin-button{ -webkit-appearan
   }
 
   function widenColumnsUniformly(target, factor){
-    var FIXED_COL_WIDTHS = [52,68,82,78,56,56,56,56,56,56,56,56];
+    var FIXED_COL_WIDTHS = [52,68,82,78,66,66,66,66,66,66,66,66];
     var cols = target.querySelectorAll("colgroup col");
     if(cols.length < FIXED_COL_WIDTHS.length + 1) return null;
     var sumFixed = FIXED_COL_WIDTHS.reduce(function(a,b){ return a + b; }, 0);
