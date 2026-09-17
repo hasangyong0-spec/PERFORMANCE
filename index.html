@@ -128,7 +128,7 @@ input:focus, select:focus{ outline:none; border-color:var(--primary); box-shadow
 
 #captureArea{ background:#ffffff; border-radius:4px; border:1px solid var(--hairline-soft); max-height:80vh; overflow:auto; position:relative; touch-action:pan-x pan-y; }
 .zoom-hint{
-  display:none; position:absolute; top:6px; left:6px; z-index:70;
+  display:none; position:absolute; top:-24px; left:6px; z-index:70;
   background:rgba(4,59,114,0.88); color:#fff; font-size:11px; font-weight:600;
   padding:4px 9px; border-radius:12px; pointer-events:none; white-space:nowrap;
 }
@@ -209,11 +209,6 @@ table.board td.branch{ background:var(--surface-soft); font-weight:700; writing-
 table.board td.team{ background:var(--surface-soft); font-weight:700; white-space:nowrap; }
 table.board td.name{ background:var(--surface-subtle); font-weight:600; white-space:nowrap; }
 table.board td.position{ background:var(--surface-subtle); font-size:13px; white-space:nowrap; }
-table.board td.team, table.board th.team-col{ position:sticky; left:0; z-index:1; }
-table.board td.name, table.board th.name-col{ position:sticky; left:52px; z-index:1; }
-table.board td.position, table.board th.position-col{ position:sticky; left:120px; z-index:1; }
-table.board thead th.team-col, table.board thead th.name-col, table.board thead th.position-col{ z-index:4; }
-table.board tr.total td.total-label{ position:sticky; left:0; z-index:1; }
 table.board td.profit{ background:#FDEBD8; }
 table.board td.stock{ background:#E7EEF6; }
 table.board td.asset{ background:#EAF2EC; }
