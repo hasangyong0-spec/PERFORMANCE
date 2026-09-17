@@ -37,7 +37,6 @@ header.mast{ background:var(--secondary); position:relative; padding:34px 20px 2
 .mast-inner{ max-width:1280px; margin:0 auto; text-align:center; }
 .mast-textblock{ display:inline-grid; justify-items:center; }
 .mast-title{ margin:0 0 8px; display:flex; align-items:baseline; justify-content:center; gap:8px; flex-wrap:nowrap; white-space:nowrap; }
-.mast-title-line2{ display:inline-flex; align-items:baseline; gap:0; white-space:nowrap; }
 .mast-title-sub{ color:var(--primary); font-weight:700; letter-spacing:0.2px; font-size:clamp(16px, 5.2vw, 40px); }
 .mast-title-main{ color:#fff; font-weight:700; letter-spacing:-0.3px; font-size:clamp(16px, 5.2vw, 40px); }
 .mast-sub{ font-size:12px; color:rgba(255,255,255,0.6); margin:0; text-align:center; }
@@ -128,13 +127,14 @@ input:focus, select:focus{ outline:none; border-color:var(--primary); box-shadow
 .table-toolbar .btn-row{ margin-top:0; }
 
 #captureArea{ background:#ffffff; border-radius:4px; border:1px solid var(--hairline-soft); max-height:80vh; overflow:auto; position:relative; touch-action:pan-x pan-y; }
+.hint-row{ display:flex; align-items:center; margin-bottom:8px; }
 .zoom-hint{
-  display:none; margin-bottom:8px; color:var(--secondary); font-size:11.5px; font-weight:600;
-  padding:0; white-space:nowrap;
+  display:none; color:var(--secondary); font-size:11.5px; font-weight:600;
+  padding:0; white-space:nowrap; margin:0;
 }
 .share-status{
-  font-size:11px; font-weight:700; margin-left:8px; padding:3px 9px; border-radius:12px; display:none;
-  vertical-align:middle; letter-spacing:0.1px;
+  font-size:11px; font-weight:700; margin-left:auto; padding:3px 9px; border-radius:12px; display:none;
+  letter-spacing:0.1px;
 }
 .share-status.shared{ display:inline-block; background:#E3F3EA; color:#1E7A42; }
 .share-status.local{ display:inline-block; background:#F4EFE0; color:#8A6D1F; }
@@ -283,10 +283,7 @@ table.board td input[type="number"]::-webkit-inner-spin-button{ -webkit-appearan
     <div class="mast-textblock">
       <h1 class="mast-title">
         <span class="mast-title-sub">미래에셋증권 투자센터대구WM</span>
-        <span class="mast-title-line2">
-          <span class="mast-title-main">칭찬게시판</span>
-          <span id="shareStatus" class="share-status"></span>
-        </span>
+        <span class="mast-title-main">칭찬게시판</span>
       </h1>
       <p class="mast-sub">셀을 눌러 실적을 바로 입력하세요. 직원을 등록하면 아래 시트가 자동으로 만들어져요.</p>
     </div>
@@ -296,7 +293,10 @@ table.board td input[type="number"]::-webkit-inner-spin-button{ -webkit-appearan
 
 <div class="page">
   <div class="panel" style="position:relative;">
-    <span class="zoom-hint">🤏 손가락으로 확대·축소</span>
+    <div class="hint-row">
+      <span class="zoom-hint">🤏 손가락으로 확대·축소</span>
+      <span id="shareStatus" class="share-status"></span>
+    </div>
     <div id="captureArea">
       <div class="sheet-title-bar">
         <span class="date-chip" id="dateChip" role="button" tabindex="0">
