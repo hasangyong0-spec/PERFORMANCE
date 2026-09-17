@@ -99,6 +99,8 @@ input:focus, select:focus{ outline:none; border-color:var(--primary); box-shadow
 .btn.navy:hover{ filter:brightness(1.15); }
 .btn.soft{ background:var(--primary-soft); border-color:var(--primary-soft); color:#6b3410; }
 .btn.soft:hover{ filter:brightness(1.05); }
+.btn.navy-soft{ background:#CFE0F2; border-color:#CFE0F2; color:var(--secondary); }
+.btn.navy-soft:hover{ filter:brightness(0.97); }
 .btn.lg{ padding:16px 20px; font-size:16px; }
 .btn-row{ display:flex; gap:8px; margin-top:12px; flex-wrap:wrap; }
 .btn-row .btn{ flex:1; }
@@ -124,15 +126,7 @@ input:focus, select:focus{ outline:none; border-color:var(--primary); box-shadow
 .table-toolbar{ display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; flex-wrap:wrap; gap:10px; }
 .table-toolbar .btn-row{ margin-top:0; }
 
-#captureArea{ background:#ffffff; border-radius:4px; border:1px solid var(--hairline-soft); overflow-x:auto; position:relative; touch-action:pan-x pan-y; }
-.sticky-header-clone{
-  position:fixed; top:0; left:0; right:0; z-index:60; overflow:hidden; background:#fff;
-  box-shadow:0 3px 10px rgba(0,0,0,0.18); display:none;
-}
-.sticky-header-clone-inner{ will-change:transform; }
-.sticky-header-clone table.board{ margin:0; }
-.sticky-header-clone .sheet-title-bar{ position:static; }
-.sticky-header-clone table.board thead th{ position:static; }
+#captureArea{ background:#ffffff; border-radius:4px; border:1px solid var(--hairline-soft); max-height:70vh; overflow:auto; position:relative; touch-action:pan-x pan-y; }
 #captureArea.exporting{ max-height:none; overflow:visible; }
 #captureArea.exporting .date-chip{ background:none; border:none; width:auto; height:auto; padding:0; }
 #captureArea.exporting .calendar-popup{ display:none !important; }
@@ -283,8 +277,6 @@ table.board td input[type="number"]::-webkit-inner-spin-button{ -webkit-appearan
   <div class="mast-rule"></div>
 </header>
 
-<div id="stickyHeaderClone" class="sticky-header-clone"></div>
-
 <div class="page">
   <div class="panel">
     <div id="captureArea">
@@ -374,20 +366,21 @@ table.board td input[type="number"]::-webkit-inner-spin-button{ -webkit-appearan
       </div>
     </div>
     <div class="btn-row">
-      <button class="btn lg" id="addRosterBtn">명단에 등록</button>
-      <button class="btn navy lg" id="toggleRosterBtn" type="button"></button>
+      <button class="btn soft lg" id="addRosterBtn">명단에 등록</button>
+      <button class="btn navy-soft lg" id="toggleRosterBtn" type="button"></button>
     </div>
     <div id="rosterGroups" style="margin-top:14px; display:none;"></div>
     <p class="hint">여기서 등록·삭제하는 즉시 위 시트에 행이 추가·삭제돼요. 팀명·직원명·직급은 시트에 미리 채워지고, 실적 항목은 시트 칸을 직접 눌러 입력하시면 됩니다.</p>
   </div>
 
   <div class="panel">
-    <span class="plain-heading">데이터 백업 (엑셀)</span>
-    <p class="hint" style="margin-top:6px;">미리보기 화면은 다시 게시할 때마다 저장된 값이 끊길 수 있어요. 가끔 엑셀로 저장해두었다가, 필요할 때 불러와서 복원하세요.</p>
+    <span class="step-flag orange title">데이터 백업</span>
+    <div class="section-rule"></div>
     <div class="btn-row">
-      <button class="btn ghost" id="exportBackupBtn">엑셀 파일로 저장</button>
-      <button class="btn ghost" id="importBackupBtn">엑셀 파일 불러오기</button>
+      <button class="btn soft lg" id="exportBackupBtn">엑셀 파일로 저장</button>
+      <button class="btn soft lg" id="importBackupBtn">엑셀 파일 불러오기</button>
     </div>
+    <p class="hint" style="margin-top:10px;">미리보기 화면은 다시 게시할 때마다 저장된 값이 끊길 수 있어요. 가끔 엑셀로 저장해두었다가, 필요할 때 불러와서 복원하세요.</p>
     <input type="file" id="importBackupInput" accept=".xlsx,.xls" style="display:none;">
   </div>
 </div>
@@ -660,7 +653,6 @@ table.board td input[type="number"]::-webkit-inner-spin-button{ -webkit-appearan
     body.appendChild(trTotal);
     updateTotals();
     body.querySelectorAll("textarea[data-field='detail']").forEach(autoGrow);
-    if(typeof refreshStickyClone === "function") refreshStickyClone();
   }
 
   function updateTotals(){
@@ -710,7 +702,6 @@ table.board td input[type="number"]::-webkit-inner-spin-button{ -webkit-appearan
   function updateDateDisplay(){
     var el = document.getElementById("dateDisplay");
     if(el) el.textContent = state.date ? formatDate(state.date) : "날짜 선택";
-    if(typeof refreshStickyClone === "function") refreshStickyClone();
   }
 
   // ---------- custom calendar popup (date switching; loads/saves per-date sheet) ----------
@@ -1074,62 +1065,6 @@ table.board td input[type="number"]::-webkit-inner-spin-button{ -webkit-appearan
   }
   window.addEventListener("load", applyStickyOffsets);
   window.addEventListener("resize", applyStickyOffsets);
-
-  // ---------- page-scroll sticky header clone (팀명/직원명 등 헤더 행을 화면 스크롤 시에도 고정 표시) ----------
-  var stickyClone = document.getElementById("stickyHeaderClone");
-  var stickyCloneInner = null;
-
-  function buildStickyClone(){
-    if(!stickyClone) return;
-    stickyClone.innerHTML = "";
-    var inner = document.createElement("div");
-    inner.className = "sticky-header-clone-inner";
-
-    var titleBarClone = document.querySelector(".sheet-title-bar").cloneNode(true);
-    titleBarClone.querySelectorAll("[id]").forEach(function(el){ el.removeAttribute("id"); });
-    titleBarClone.style.width = document.querySelector(".sheet-title-bar").getBoundingClientRect().width + "px";
-
-    var origTable = document.getElementById("boardTable");
-    var tableClone = document.createElement("table");
-    tableClone.className = "board";
-    tableClone.style.width = origTable.getBoundingClientRect().width + "px";
-    tableClone.appendChild(origTable.querySelector("colgroup").cloneNode(true));
-    tableClone.appendChild(origTable.querySelector("thead").cloneNode(true));
-
-    inner.appendChild(titleBarClone);
-    inner.appendChild(tableClone);
-    stickyClone.appendChild(inner);
-    stickyCloneInner = inner;
-    syncStickyCloneScroll();
-  }
-
-  function syncStickyCloneScroll(){
-    if(!stickyCloneInner) return;
-    var target = document.getElementById("captureArea");
-    stickyCloneInner.style.transform = "translateX(" + (-target.scrollLeft) + "px)";
-  }
-
-  function updateStickyCloneVisibility(){
-    var target = document.getElementById("captureArea");
-    if(!target || !stickyClone) return;
-    var rect = target.getBoundingClientRect();
-    var cloneH = stickyClone.offsetHeight || 0;
-    // 시트 상단이 화면 위로 넘어갔고, 아직 시트 영역(표 전체) 안에 있을 때만 고정 헤더를 보여준다.
-    if(rect.top < 0 && rect.bottom > cloneH + 20){
-      stickyClone.style.display = "block";
-    } else {
-      stickyClone.style.display = "none";
-    }
-  }
-
-  function refreshStickyClone(){
-    buildStickyClone();
-    updateStickyCloneVisibility();
-  }
-
-  window.addEventListener("scroll", updateStickyCloneVisibility, { passive:true });
-  window.addEventListener("resize", refreshStickyClone);
-  document.getElementById("captureArea").addEventListener("scroll", syncStickyCloneScroll, { passive:true });
 
   // ---------- mobile masthead: match title line widths, fit subtitle to one line ----------
   function measureTextWidth(text, font){
