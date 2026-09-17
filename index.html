@@ -80,7 +80,7 @@ input:focus, select:focus{ outline:none; border-color:var(--primary); box-shadow
 .row2{ display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:10px; }
 .row3{ display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr) minmax(0,1fr); gap:10px; }
 @media (max-width:520px){
-  .row2, .row3{ grid-template-columns:minmax(0,1fr); }
+  .row2{ grid-template-columns:minmax(0,1fr); }
   .page{ padding-left:14px; padding-right:14px; }
   .panel{ padding-left:14px; padding-right:14px; }
 }
@@ -125,6 +125,14 @@ input:focus, select:focus{ outline:none; border-color:var(--primary); box-shadow
 .table-toolbar .btn-row{ margin-top:0; }
 
 #captureArea{ background:#ffffff; border-radius:4px; border:1px solid var(--hairline-soft); overflow-x:auto; position:relative; touch-action:pan-x pan-y; }
+.sticky-header-clone{
+  position:fixed; top:0; left:0; right:0; z-index:60; overflow:hidden; background:#fff;
+  box-shadow:0 3px 10px rgba(0,0,0,0.18); display:none;
+}
+.sticky-header-clone-inner{ will-change:transform; }
+.sticky-header-clone table.board{ margin:0; }
+.sticky-header-clone .sheet-title-bar{ position:static; }
+.sticky-header-clone table.board thead th{ position:static; }
 #captureArea.exporting{ max-height:none; overflow:visible; }
 #captureArea.exporting .date-chip{ background:none; border:none; width:auto; height:auto; padding:0; }
 #captureArea.exporting .calendar-popup{ display:none !important; }
@@ -275,6 +283,8 @@ table.board td input[type="number"]::-webkit-inner-spin-button{ -webkit-appearan
   <div class="mast-rule"></div>
 </header>
 
+<div id="stickyHeaderClone" class="sticky-header-clone"></div>
+
 <div class="page">
   <div class="panel">
     <div id="captureArea">
@@ -370,11 +380,22 @@ table.board td input[type="number"]::-webkit-inner-spin-button{ -webkit-appearan
     <div id="rosterGroups" style="margin-top:14px; display:none;"></div>
     <p class="hint">여기서 등록·삭제하는 즉시 위 시트에 행이 추가·삭제돼요. 팀명·직원명·직급은 시트에 미리 채워지고, 실적 항목은 시트 칸을 직접 눌러 입력하시면 됩니다.</p>
   </div>
+
+  <div class="panel">
+    <span class="plain-heading">데이터 백업 (엑셀)</span>
+    <p class="hint" style="margin-top:6px;">미리보기 화면은 다시 게시할 때마다 저장된 값이 끊길 수 있어요. 가끔 엑셀로 저장해두었다가, 필요할 때 불러와서 복원하세요.</p>
+    <div class="btn-row">
+      <button class="btn ghost" id="exportBackupBtn">엑셀 파일로 저장</button>
+      <button class="btn ghost" id="importBackupBtn">엑셀 파일 불러오기</button>
+    </div>
+    <input type="file" id="importBackupInput" accept=".xlsx,.xls" style="display:none;">
+  </div>
 </div>
 
 <div class="toast" id="toast"></div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <script>
 (function(){
   "use strict";
@@ -639,6 +660,7 @@ table.board td input[type="number"]::-webkit-inner-spin-button{ -webkit-appearan
     body.appendChild(trTotal);
     updateTotals();
     body.querySelectorAll("textarea[data-field='detail']").forEach(autoGrow);
+    if(typeof refreshStickyClone === "function") refreshStickyClone();
   }
 
   function updateTotals(){
@@ -688,6 +710,7 @@ table.board td input[type="number"]::-webkit-inner-spin-button{ -webkit-appearan
   function updateDateDisplay(){
     var el = document.getElementById("dateDisplay");
     if(el) el.textContent = state.date ? formatDate(state.date) : "날짜 선택";
+    if(typeof refreshStickyClone === "function") refreshStickyClone();
   }
 
   // ---------- custom calendar popup (date switching; loads/saves per-date sheet) ----------
@@ -1052,6 +1075,62 @@ table.board td input[type="number"]::-webkit-inner-spin-button{ -webkit-appearan
   window.addEventListener("load", applyStickyOffsets);
   window.addEventListener("resize", applyStickyOffsets);
 
+  // ---------- page-scroll sticky header clone (팀명/직원명 등 헤더 행을 화면 스크롤 시에도 고정 표시) ----------
+  var stickyClone = document.getElementById("stickyHeaderClone");
+  var stickyCloneInner = null;
+
+  function buildStickyClone(){
+    if(!stickyClone) return;
+    stickyClone.innerHTML = "";
+    var inner = document.createElement("div");
+    inner.className = "sticky-header-clone-inner";
+
+    var titleBarClone = document.querySelector(".sheet-title-bar").cloneNode(true);
+    titleBarClone.querySelectorAll("[id]").forEach(function(el){ el.removeAttribute("id"); });
+    titleBarClone.style.width = document.querySelector(".sheet-title-bar").getBoundingClientRect().width + "px";
+
+    var origTable = document.getElementById("boardTable");
+    var tableClone = document.createElement("table");
+    tableClone.className = "board";
+    tableClone.style.width = origTable.getBoundingClientRect().width + "px";
+    tableClone.appendChild(origTable.querySelector("colgroup").cloneNode(true));
+    tableClone.appendChild(origTable.querySelector("thead").cloneNode(true));
+
+    inner.appendChild(titleBarClone);
+    inner.appendChild(tableClone);
+    stickyClone.appendChild(inner);
+    stickyCloneInner = inner;
+    syncStickyCloneScroll();
+  }
+
+  function syncStickyCloneScroll(){
+    if(!stickyCloneInner) return;
+    var target = document.getElementById("captureArea");
+    stickyCloneInner.style.transform = "translateX(" + (-target.scrollLeft) + "px)";
+  }
+
+  function updateStickyCloneVisibility(){
+    var target = document.getElementById("captureArea");
+    if(!target || !stickyClone) return;
+    var rect = target.getBoundingClientRect();
+    var cloneH = stickyClone.offsetHeight || 0;
+    // 시트 상단이 화면 위로 넘어갔고, 아직 시트 영역(표 전체) 안에 있을 때만 고정 헤더를 보여준다.
+    if(rect.top < 0 && rect.bottom > cloneH + 20){
+      stickyClone.style.display = "block";
+    } else {
+      stickyClone.style.display = "none";
+    }
+  }
+
+  function refreshStickyClone(){
+    buildStickyClone();
+    updateStickyCloneVisibility();
+  }
+
+  window.addEventListener("scroll", updateStickyCloneVisibility, { passive:true });
+  window.addEventListener("resize", refreshStickyClone);
+  document.getElementById("captureArea").addEventListener("scroll", syncStickyCloneScroll, { passive:true });
+
   // ---------- mobile masthead: match title line widths, fit subtitle to one line ----------
   function measureTextWidth(text, font){
     var canvas = measureTextWidth._c || (measureTextWidth._c = document.createElement("canvas"));
@@ -1128,6 +1207,123 @@ table.board td input[type="number"]::-webkit-inner-spin-button{ -webkit-appearan
     sheetEl.addEventListener("touchend", endPinch);
     sheetEl.addEventListener("touchcancel", endPinch);
   })();
+
+  // ---------- data backup / restore as Excel (survives design changes & preview resets) ----------
+  document.getElementById("exportBackupBtn").addEventListener("click", function(){
+    if(typeof XLSX === "undefined"){ showToast("엑셀 라이브러리를 불러오지 못했어요"); return; }
+    try{
+      var perfRows = [];
+      Object.keys(state.recordsByDate).sort().forEach(function(date){
+        var rec = state.recordsByDate[date];
+        (rec.roster || []).forEach(function(m){
+          var v = (rec.values && rec.values[m.id]) || {};
+          perfRows.push({
+            "날짜": date, "팀명": m.team, "직원명": m.name, "직급": m.position,
+            "수익(만원)": v.profit || 0,
+            "주식매매_해외(억)": v.stockOverseas || 0, "주식매매_국내(억)": v.stockDomestic || 0,
+            "자산증대_해외(억)": v.assetOverseas || 0, "자산증대_국내(억)": v.assetDomestic || 0,
+            "연금자산(억)": v.pension || 0, "금융상품(억)": v.fin || 0,
+            "Wrap_금액(억)": v.wrapAmount || 0, "Wrap_건수": v.wrapCount || 0,
+            "상세내용": v.detail || ""
+          });
+        });
+      });
+      var rosterRows = state.roster.map(function(m){
+        return { "팀명": m.team, "직원명": m.name, "직급": m.position };
+      });
+
+      var wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(perfRows), "실적데이터");
+      XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(rosterRows), "직원명단");
+      XLSX.writeFile(wb, "praise-board-backup_" + todayStr() + ".xlsx");
+      showToast("엑셀 파일로 저장했어요");
+    }catch(e){
+      showToast("엑셀 파일 저장에 실패했어요");
+    }
+  });
+
+  document.getElementById("importBackupBtn").addEventListener("click", function(){
+    document.getElementById("importBackupInput").click();
+  });
+
+  document.getElementById("importBackupInput").addEventListener("change", function(e){
+    var file = e.target.files && e.target.files[0];
+    if(!file) return;
+    if(typeof XLSX === "undefined"){ showToast("엑셀 라이브러리를 불러오지 못했어요"); e.target.value = ""; return; }
+    var reader = new FileReader();
+    reader.onload = function(evt){
+      try{
+        var data = new Uint8Array(evt.target.result);
+        var wb = XLSX.read(data, { type: "array" });
+        var perfSheet = wb.Sheets["실적데이터"];
+        var rosterSheet = wb.Sheets["직원명단"];
+        if(!perfSheet && !rosterSheet){
+          showToast("올바른 백업 엑셀 파일이 아니에요");
+          e.target.value = "";
+          return;
+        }
+        var perfRows = perfSheet ? XLSX.utils.sheet_to_json(perfSheet) : [];
+        var rosterRows = rosterSheet ? XLSX.utils.sheet_to_json(rosterSheet) : [];
+
+        showConfirm("엑셀 백업 파일을 불러올까요? 현재 명단·실적이 파일 내용으로 바뀝니다.", function(){
+          var idMap = {};
+          function getId(team, name){
+            var key = team + "|" + name;
+            if(!idMap[key]) idMap[key] = uid();
+            return idMap[key];
+          }
+          var newRoster = [];
+          rosterRows.forEach(function(r){
+            var team = String(r["팀명"] || "").trim();
+            var name = String(r["직원명"] || "").trim();
+            var position = String(r["직급"] || "").trim();
+            if(!team || !name) return;
+            newRoster.push({ id: getId(team, name), team: team, name: name, position: position });
+          });
+          var newRecords = {};
+          perfRows.forEach(function(r){
+            var date = String(r["날짜"] || "").trim();
+            var team = String(r["팀명"] || "").trim();
+            var name = String(r["직원명"] || "").trim();
+            if(!date || !team || !name) return;
+            if(!newRecords[date]) newRecords[date] = { roster: [], values: {} };
+            var id = getId(team, name);
+            if(!newRecords[date].roster.some(function(m){ return m.id === id; })){
+              newRecords[date].roster.push({ id: id, team: team, name: name, position: String(r["직급"] || "").trim() });
+            }
+            newRecords[date].values[id] = {
+              profit: Number(r["수익(만원)"]) || 0,
+              stockOverseas: Number(r["주식매매_해외(억)"]) || 0,
+              stockDomestic: Number(r["주식매매_국내(억)"]) || 0,
+              assetOverseas: Number(r["자산증대_해외(억)"]) || 0,
+              assetDomestic: Number(r["자산증대_국내(억)"]) || 0,
+              pension: Number(r["연금자산(억)"]) || 0,
+              fin: Number(r["금융상품(억)"]) || 0,
+              wrapAmount: Number(r["Wrap_금액(억)"]) || 0,
+              wrapCount: Number(r["Wrap_건수"]) || 0,
+              detail: String(r["상세내용"] || "")
+            };
+          });
+          state = {
+            title: "투자센터대구WM 칭찬게시판",
+            date: todayStr(),
+            roster: newRoster.length ? newRoster : state.roster,
+            recordsByDate: newRecords
+          };
+          migrateFixNames();
+          saveState();
+          updateDateDisplay();
+          renderRoster();
+          renderSheet();
+          showToast("엑셀 백업 파일을 불러왔어요");
+        });
+      }catch(err){
+        showToast("엑셀 파일을 읽는 데 실패했어요");
+      }
+      e.target.value = "";
+    };
+    reader.readAsArrayBuffer(file);
+  });
 
   // ---------- init ----------
   loadState();
