@@ -127,6 +127,14 @@ input:focus, select:focus{ outline:none; border-color:var(--primary); box-shadow
 .table-toolbar .btn-row{ margin-top:0; }
 
 #captureArea{ background:#ffffff; border-radius:4px; border:1px solid var(--hairline-soft); max-height:80vh; overflow:auto; position:relative; touch-action:pan-x pan-y; }
+.zoom-hint{
+  display:none; position:absolute; top:6px; left:6px; z-index:70;
+  background:rgba(4,59,114,0.88); color:#fff; font-size:11px; font-weight:600;
+  padding:4px 9px; border-radius:12px; pointer-events:none; white-space:nowrap;
+}
+@media (max-width:480px){
+  .zoom-hint{ display:inline-block; }
+}
 #captureArea.exporting{ max-height:none; overflow:visible; }
 #captureArea.exporting .date-chip{ background:none; border:none; width:auto; height:auto; padding:0; }
 #captureArea.exporting .calendar-popup{ display:none !important; }
@@ -201,6 +209,11 @@ table.board td.branch{ background:var(--surface-soft); font-weight:700; writing-
 table.board td.team{ background:var(--surface-soft); font-weight:700; white-space:nowrap; }
 table.board td.name{ background:var(--surface-subtle); font-weight:600; white-space:nowrap; }
 table.board td.position{ background:var(--surface-subtle); font-size:13px; white-space:nowrap; }
+table.board td.team, table.board th.team-col{ position:sticky; left:0; z-index:1; }
+table.board td.name, table.board th.name-col{ position:sticky; left:52px; z-index:1; }
+table.board td.position, table.board th.position-col{ position:sticky; left:120px; z-index:1; }
+table.board thead th.team-col, table.board thead th.name-col, table.board thead th.position-col{ z-index:4; }
+table.board tr.total td.total-label{ position:sticky; left:0; z-index:1; }
 table.board td.profit{ background:#FDEBD8; }
 table.board td.stock{ background:#E7EEF6; }
 table.board td.asset{ background:#EAF2EC; }
@@ -278,7 +291,8 @@ table.board td input[type="number"]::-webkit-inner-spin-button{ -webkit-appearan
 </header>
 
 <div class="page">
-  <div class="panel">
+  <div class="panel" style="position:relative;">
+    <span class="zoom-hint">🤏 손가락으로 확대·축소</span>
     <div id="captureArea">
       <div class="sheet-title-bar">
         <span class="date-chip" id="dateChip" role="button" tabindex="0">
@@ -304,9 +318,9 @@ table.board td input[type="number"]::-webkit-inner-spin-button{ -webkit-appearan
         </colgroup>
         <thead>
           <tr>
-            <th rowspan="2">팀명</th>
-            <th rowspan="2">직원명</th>
-            <th rowspan="2">직 급</th>
+            <th class="team-col" rowspan="2">팀명</th>
+            <th class="name-col" rowspan="2">직원명</th>
+            <th class="position-col" rowspan="2">직 급</th>
             <th rowspan="2">수익<br>(만원)</th>
             <th colspan="2">주식매매(억)</th>
             <th colspan="2">자산증대(억)</th>
@@ -645,7 +659,7 @@ table.board td input[type="number"]::-webkit-inner-spin-button{ -webkit-appearan
     trTotal.className = "total";
     trTotal.id = "totalRow";
     trTotal.innerHTML =
-      '<td colspan="3">합계</td>' +
+      '<td class="total-label" colspan="3">합계</td>' +
       '<td id="tot-profit"></td><td id="tot-stockOverseas"></td><td id="tot-stockDomestic"></td>' +
       '<td id="tot-assetOverseas"></td><td id="tot-assetDomestic"></td>' +
       '<td id="tot-pension"></td><td id="tot-fin"></td>' +
@@ -1112,6 +1126,12 @@ table.board td input[type="number"]::-webkit-inner-spin-button{ -webkit-appearan
   (function(){
     var sheetEl = document.getElementById("captureArea");
     if(!sheetEl) return;
+
+    // 모바일에서는 처음 열었을 때 팀명~직급 정도가 자연스럽게 보이는 배율로 시작한다.
+    if(window.innerWidth <= 480){
+      sheetEl.style.zoom = 0.6;
+    }
+
     var pinch = { active:false, startDist:0, startZoom:1 };
     function getDistance(touches){
       var dx = touches[0].clientX - touches[1].clientX;
