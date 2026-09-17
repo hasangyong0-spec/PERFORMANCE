@@ -1158,32 +1158,57 @@ table.board td input[type="number"]::-webkit-inner-spin-button{ -webkit-appearan
     sheetEl.addEventListener("touchcancel", endPinch);
   })();
 
-  // ---------- data backup / restore as Excel (survives design changes & preview resets) ----------
+  // ---------- data backup / restore as Excel: 날짜별로 시트를 나눠 화면 그대로의 표 형태로 저장 ----------
+  var EXCEL_HEADERS = ["팀명","직원명","직급","수익(만원)","주식매매_해외(억)","주식매매_국내(억)","자산증대_해외(억)","자산증대_국내(억)","연금자산(억)","금융상품(억)","Wrap_금액(억)","Wrap_건수","상세내용"];
+
+  function buildDateSheet(rec){
+    var roster = rec.roster || [];
+    var values = rec.values || {};
+    var teams = getTeamsFor(roster);
+    var aoa = [EXCEL_HEADERS];
+    var merges = [];
+    var rowIdx = 1;
+    var sums = {}; NUM_FIELDS.forEach(function(f){ sums[f] = 0; });
+
+    teams.forEach(function(team){
+      var members = roster.filter(function(m){ return m.team === team; });
+      var startRow = rowIdx;
+      members.forEach(function(m){
+        var v = values[m.id] || {};
+        NUM_FIELDS.forEach(function(f){ sums[f] += (parseFloat(v[f]) || 0); });
+        aoa.push([
+          team, m.name, m.position,
+          v.profit || 0, v.stockOverseas || 0, v.stockDomestic || 0,
+          v.assetOverseas || 0, v.assetDomestic || 0, v.pension || 0, v.fin || 0,
+          v.wrapAmount || 0, v.wrapCount || 0, v.detail || ""
+        ]);
+        rowIdx++;
+      });
+      if(members.length > 1){
+        merges.push({ s: { r: startRow, c: 0 }, e: { r: rowIdx - 1, c: 0 } });
+      }
+    });
+
+    aoa.push(["합계", "", "", sums.profit, sums.stockOverseas, sums.stockDomestic, sums.assetOverseas, sums.assetDomestic, sums.pension, sums.fin, sums.wrapAmount, sums.wrapCount, ""]);
+
+    var ws = XLSX.utils.aoa_to_sheet(aoa);
+    ws["!merges"] = merges;
+    ws["!cols"] = [{ wch:8 },{ wch:10 },{ wch:12 },{ wch:10 },{ wch:13 },{ wch:13 },{ wch:13 },{ wch:13 },{ wch:11 },{ wch:11 },{ wch:11 },{ wch:9 },{ wch:32 }];
+    return ws;
+  }
+
   document.getElementById("exportBackupBtn").addEventListener("click", function(){
     if(typeof XLSX === "undefined"){ showToast("엑셀 라이브러리를 불러오지 못했어요"); return; }
     try{
-      var perfRows = [];
-      Object.keys(state.recordsByDate).sort().forEach(function(date){
-        var rec = state.recordsByDate[date];
-        (rec.roster || []).forEach(function(m){
-          var v = (rec.values && rec.values[m.id]) || {};
-          perfRows.push({
-            "날짜": date, "팀명": m.team, "직원명": m.name, "직급": m.position,
-            "수익(만원)": v.profit || 0,
-            "주식매매_해외(억)": v.stockOverseas || 0, "주식매매_국내(억)": v.stockDomestic || 0,
-            "자산증대_해외(억)": v.assetOverseas || 0, "자산증대_국내(억)": v.assetDomestic || 0,
-            "연금자산(억)": v.pension || 0, "금융상품(억)": v.fin || 0,
-            "Wrap_금액(억)": v.wrapAmount || 0, "Wrap_건수": v.wrapCount || 0,
-            "상세내용": v.detail || ""
-          });
-        });
+      var wb = XLSX.utils.book_new();
+      var dates = Object.keys(state.recordsByDate).sort();
+      dates.forEach(function(date){
+        var ws = buildDateSheet(state.recordsByDate[date]);
+        XLSX.utils.book_append_sheet(wb, ws, date);
       });
       var rosterRows = state.roster.map(function(m){
         return { "팀명": m.team, "직원명": m.name, "직급": m.position };
       });
-
-      var wb = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(perfRows), "실적데이터");
       XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(rosterRows), "직원명단");
       XLSX.writeFile(wb, "praise-board-backup_" + todayStr() + ".xlsx");
       showToast("엑셀 파일로 저장했어요");
@@ -1205,15 +1230,12 @@ table.board td input[type="number"]::-webkit-inner-spin-button{ -webkit-appearan
       try{
         var data = new Uint8Array(evt.target.result);
         var wb = XLSX.read(data, { type: "array" });
-        var perfSheet = wb.Sheets["실적데이터"];
-        var rosterSheet = wb.Sheets["직원명단"];
-        if(!perfSheet && !rosterSheet){
+        var sheetNames = wb.SheetNames.filter(function(n){ return n !== "직원명단"; });
+        if(sheetNames.length === 0 && !wb.Sheets["직원명단"]){
           showToast("올바른 백업 엑셀 파일이 아니에요");
           e.target.value = "";
           return;
         }
-        var perfRows = perfSheet ? XLSX.utils.sheet_to_json(perfSheet) : [];
-        var rosterRows = rosterSheet ? XLSX.utils.sheet_to_json(rosterSheet) : [];
 
         showConfirm("엑셀 백업 파일을 불러올까요? 현재 명단·실적이 파일 내용으로 바뀝니다.", function(){
           var idMap = {};
@@ -1222,6 +1244,38 @@ table.board td input[type="number"]::-webkit-inner-spin-button{ -webkit-appearan
             if(!idMap[key]) idMap[key] = uid();
             return idMap[key];
           }
+
+          var newRecords = {};
+          sheetNames.forEach(function(date){
+            var ws = wb.Sheets[date];
+            var rows = XLSX.utils.sheet_to_json(ws, { header: 1 });
+            if(!rows || rows.length < 2) return;
+            var rec = { roster: [], values: {} };
+            for(var i = 1; i < rows.length; i++){
+              var r = rows[i] || [];
+              var team = String(r[0] || "").trim();
+              var name = String(r[1] || "").trim();
+              if(!team || !name || team === "합계") continue;
+              var id = getId(team, name);
+              rec.roster.push({ id: id, team: team, name: name, position: String(r[2] || "").trim() });
+              rec.values[id] = {
+                profit: Number(r[3]) || 0,
+                stockOverseas: Number(r[4]) || 0,
+                stockDomestic: Number(r[5]) || 0,
+                assetOverseas: Number(r[6]) || 0,
+                assetDomestic: Number(r[7]) || 0,
+                pension: Number(r[8]) || 0,
+                fin: Number(r[9]) || 0,
+                wrapAmount: Number(r[10]) || 0,
+                wrapCount: Number(r[11]) || 0,
+                detail: String(r[12] || "")
+              };
+            }
+            if(rec.roster.length > 0) newRecords[date] = rec;
+          });
+
+          var rosterSheet = wb.Sheets["직원명단"];
+          var rosterRows = rosterSheet ? XLSX.utils.sheet_to_json(rosterSheet) : [];
           var newRoster = [];
           rosterRows.forEach(function(r){
             var team = String(r["팀명"] || "").trim();
@@ -1230,30 +1284,12 @@ table.board td input[type="number"]::-webkit-inner-spin-button{ -webkit-appearan
             if(!team || !name) return;
             newRoster.push({ id: getId(team, name), team: team, name: name, position: position });
           });
-          var newRecords = {};
-          perfRows.forEach(function(r){
-            var date = String(r["날짜"] || "").trim();
-            var team = String(r["팀명"] || "").trim();
-            var name = String(r["직원명"] || "").trim();
-            if(!date || !team || !name) return;
-            if(!newRecords[date]) newRecords[date] = { roster: [], values: {} };
-            var id = getId(team, name);
-            if(!newRecords[date].roster.some(function(m){ return m.id === id; })){
-              newRecords[date].roster.push({ id: id, team: team, name: name, position: String(r["직급"] || "").trim() });
-            }
-            newRecords[date].values[id] = {
-              profit: Number(r["수익(만원)"]) || 0,
-              stockOverseas: Number(r["주식매매_해외(억)"]) || 0,
-              stockDomestic: Number(r["주식매매_국내(억)"]) || 0,
-              assetOverseas: Number(r["자산증대_해외(억)"]) || 0,
-              assetDomestic: Number(r["자산증대_국내(억)"]) || 0,
-              pension: Number(r["연금자산(억)"]) || 0,
-              fin: Number(r["금융상품(억)"]) || 0,
-              wrapAmount: Number(r["Wrap_금액(억)"]) || 0,
-              wrapCount: Number(r["Wrap_건수"]) || 0,
-              detail: String(r["상세내용"] || "")
-            };
-          });
+          if(newRoster.length === 0){
+            // 직원명단 시트가 없으면 최근 날짜 시트의 명단을 대신 사용한다.
+            var lastDate = Object.keys(newRecords).sort().pop();
+            if(lastDate) newRoster = newRecords[lastDate].roster.slice();
+          }
+
           state = {
             title: "투자센터대구WM 칭찬게시판",
             date: todayStr(),
