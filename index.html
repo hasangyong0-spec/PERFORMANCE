@@ -1,0 +1,768 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>미래에셋증권 투자센터대구WM 칭찬게시판</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --primary:#F58220; --primary-active:#CB6015; --primary-soft:#FAB072; --primary-disabled:#D7D7D7;
+  --secondary:#043B72;
+  --canvas:#FFFFFF; --surface-soft:#ECEFF4; --surface-subtle:#F7F8FA;
+  --hairline:#CDCECB; --hairline-soft:#E5E4E1;
+  --ink:#1A1A1A; --body-strong:#2C2C2C; --body:#3D3D3D; --muted:#6C6C6C; --muted-soft:#84888B;
+  --success:#2E8540; --warning:#D4A017; --error:#C62828;
+  --font-kr:'Noto Sans KR','Apple SD Gothic Neo','Malgun Gothic',sans-serif;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --canvas:#12161c; --surface-soft:#1b212a; --surface-subtle:#1b212a;
+    --hairline:#3a4048; --hairline-soft:#2c333c;
+    --ink:#eef1f4; --body-strong:#dde2e7; --body:#c3c9d1; --muted:#9aa1ab; --muted-soft:#7c848f;
+  }
+}
+.archive-panel-dark-noop{}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]) .archive-panel{ background:#161c26; border-color:#31435c; }
+}
+*{box-sizing:border-box;}
+body{margin:0;background:var(--surface-subtle);color:var(--body);line-height:1.6;font-variant-numeric:tabular-nums;font-family:var(--font-kr);}
+button,input,select,textarea{font-family:inherit;}
+
+header.mast{ background:var(--secondary); position:relative; padding:34px 20px 26px; }
+.mast-inner{ max-width:1280px; margin:0 auto; }
+.mast-title{ margin:0 0 8px; display:flex; align-items:baseline; gap:8px; flex-wrap:nowrap; white-space:nowrap; }
+.mast-title-sub{ color:var(--primary); font-weight:700; letter-spacing:0.2px; font-size:clamp(14px, 4.4vw, 34px); }
+.mast-title-main{ color:#fff; font-weight:700; letter-spacing:-0.3px; font-size:clamp(16px, 5.1vw, 40px); }
+.mast-sub{ font-size:12px; color:rgba(255,255,255,0.6); margin:0; }
+.mast-rule{ height:2px; background:var(--primary); position:absolute; bottom:0; left:0; right:0; }
+@media (max-width:380px){
+  header.mast{ padding:28px 14px 22px; }
+  .mast-title{ gap:5px; }
+}
+
+.page{ max-width:1280px; margin:0 auto; padding:32px 20px 64px; }
+.grid{ display:grid; grid-template-columns:360px 1fr; gap:24px; align-items:start; }
+@media (max-width:980px){ .grid{ grid-template-columns:1fr; } }
+
+.step-flag{
+  display:inline-block; font-size:11px; font-weight:700; letter-spacing:0.6px;
+  color:#fff; background:var(--secondary); padding:3px 9px; border-radius:2px; margin-bottom:8px;
+}
+.step-flag.orange{ background:var(--primary); }
+.step-flag.title{ font-size:15px; padding:6px 13px; letter-spacing:0.2px; background:#6C6C6C; color:#fff; }
+
+.section-rule{ height:1px; background:var(--primary); margin-bottom:12px; }
+.section-rule.navy{ background:var(--secondary); }
+.section-title{ font-size:16px; font-weight:700; color:var(--ink); margin:0; display:flex; justify-content:space-between; align-items:baseline; }
+.section-title .cnt{ font-size:12px; font-weight:400; color:var(--muted); }
+
+.archive-panel{ border-color:#C7D3E0; background:#F1F4F8; }
+
+.panel{ background:var(--canvas); border:1px solid var(--hairline); border-radius:4px; padding:18px 18px 20px; }
+.panel + .panel{ margin-top:18px; }
+
+label{ display:block; font-size:12px; color:var(--muted); margin:12px 0 5px; font-weight:500; }
+label:first-of-type{ margin-top:0; }
+input[type="text"], input[type="number"], input[type="date"], select{
+  width:100%; padding:9px 10px; border:1px solid var(--hairline); border-radius:4px;
+  background:var(--canvas); color:var(--ink); font-size:13.5px;
+}
+input:focus, select:focus{ outline:none; border-color:var(--primary); box-shadow:0 0 0 2px rgba(245,130,32,0.15); }
+.row2{ display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+.row3{ display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; }
+
+.btn{
+  display:inline-flex; align-items:center; justify-content:center; gap:6px;
+  border:1.5px solid var(--primary); border-radius:2px; padding:9px 16px; font-size:13px; font-weight:700;
+  cursor:pointer; color:#fff; background:var(--primary); transition:filter .15s;
+}
+.btn:hover{ filter:brightness(1.08); }
+.btn.ghost{ background:#fff; color:var(--secondary); border-color:var(--hairline); }
+.btn.ghost:hover{ background:var(--surface-subtle); }
+.btn.block{ width:100%; margin-top:12px; }
+.btn.big{ font-size:15px; padding:14px 18px; }
+.btn.navy{ background:var(--secondary); border-color:var(--secondary); }
+.btn.navy:hover{ filter:brightness(1.15); }
+.btn-row{ display:flex; gap:8px; margin-top:12px; flex-wrap:wrap; }
+.btn-row .btn{ flex:1; }
+
+.roster-group{ margin-top:14px; }
+.roster-group:first-of-type{ margin-top:12px; }
+.roster-group-title{
+  font-size:12px; font-weight:700; color:var(--secondary);
+  border-left:3px solid var(--primary); padding-left:8px; margin-bottom:7px;
+}
+.chip-list{ display:flex; flex-wrap:wrap; gap:6px; }
+.chip{
+  display:flex; align-items:center; gap:6px; background:var(--surface-soft);
+  border:1px solid var(--hairline); border-radius:2px; padding:5px 6px 5px 12px; font-size:12.5px; color:var(--body-strong);
+}
+.chip .pos{ color:var(--muted); font-size:11.5px; }
+.chip button{
+  border:none; background:var(--hairline); color:var(--ink); width:16px; height:16px; border-radius:50%;
+  font-size:10px; line-height:1; cursor:pointer; display:flex; align-items:center; justify-content:center; flex-shrink:0;
+}
+.empty{ color:var(--muted); font-size:12.5px; text-align:center; padding:16px 0; }
+
+.table-toolbar{ display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; flex-wrap:wrap; gap:10px; }
+.table-toolbar .btn-row{ margin-top:0; }
+
+#captureArea{ background:#ffffff; padding:20px; border-radius:4px; overflow-x:auto; border:1px solid var(--hairline-soft); }
+table.board{ border-collapse:collapse; width:100%; min-width:960px; table-layout:fixed; font-size:12.5px; color:#1A1A1A; }
+table.board caption{
+  background:var(--secondary); color:#fff; font-size:16px; font-weight:700; padding:11px 0;
+  border:1px solid var(--secondary); letter-spacing:0.2px;
+}
+table.board th, table.board td{ border:1px solid var(--hairline); padding:5px 4px; text-align:center; vertical-align:middle; }
+table.board thead th{ background:var(--primary-soft); font-weight:700; font-size:11.5px; color:#1A1A1A; }
+table.board td.branch{ background:var(--surface-soft); font-weight:700; writing-mode:vertical-rl; text-orientation:mixed; letter-spacing:1px; white-space:nowrap; }
+table.board td.team{ background:var(--surface-soft); font-weight:700; white-space:nowrap; }
+table.board td.name{ background:var(--surface-subtle); font-weight:600; white-space:nowrap; }
+table.board td.position{ background:var(--surface-subtle); font-size:11.5px; white-space:nowrap; }
+table.board td.profit{ background:#FDEBD8; }
+table.board td.stock{ background:#E7EEF6; }
+table.board td.asset{ background:#EAF2EC; }
+table.board td.pension{ background:#FDF3D8; }
+table.board td.fin{ background:#F1EEDD; }
+table.board td.wrap{ background:#F7E3E8; }
+table.board td.detail{ background:#ffffff; text-align:left; padding-left:8px; }
+table.board tr.total td{ background:var(--primary-disabled); font-weight:700; }
+table.board td.empty-cell{ background:#fff; }
+
+table.board td input{
+  width:100%; border:none; background:transparent; padding:2px 1px; font:inherit; color:#1A1A1A;
+  text-align:right; font-size:12.5px; font-variant-numeric:tabular-nums; min-width:0;
+}
+table.board td.detail textarea{
+  width:100%; border:none; background:transparent; padding:3px 2px; font:inherit; color:#1A1A1A;
+  text-align:left; font-size:12.5px; resize:none; overflow:hidden; line-height:1.45; display:block;
+}
+table.board td.detail textarea:focus{ outline:2px solid var(--primary); outline-offset:-2px; background:#fff; border-radius:2px; }
+table.board td input:focus{ outline:2px solid var(--primary); outline-offset:-2px; background:#fff; border-radius:2px; }
+table.board td input[type="number"]{ -moz-appearance:textfield; }
+table.board td input[type="number"]::-webkit-outer-spin-button,
+table.board td input[type="number"]::-webkit-inner-spin-button{ -webkit-appearance:none; margin:0; }
+.cell-wrap{ display:flex; align-items:center; justify-content:flex-end; gap:2px; }
+.cell-wrap .unit{ color:var(--muted); font-size:10.5px; white-space:nowrap; flex-shrink:0; }
+
+.hint{ font-size:11.5px; color:var(--muted); margin-top:8px; line-height:1.55; }
+
+.toast{
+  position:fixed; bottom:24px; left:50%; transform:translateX(-50%);
+  background:var(--secondary); color:#fff; padding:10px 18px; border-radius:2px;
+  font-size:13px; box-shadow:0 6px 18px rgba(0,0,0,.18);
+  opacity:0; pointer-events:none; transition:opacity .25s, transform .25s; z-index:50;
+}
+.toast.show{ opacity:1; transform:translateX(-50%) translateY(-4px); }
+</style>
+</head>
+<body>
+
+<header class="mast">
+  <div class="mast-inner">
+    <h1 class="mast-title">
+      <span class="mast-title-sub">미래에셋증권 투자센터대구WM</span>
+      <span class="mast-title-main">칭찬게시판</span>
+    </h1>
+    <p class="mast-sub">직원을 등록하면 아래 시트가 자동으로 만들어져요. 셀을 눌러 실적을 바로 입력하세요.</p>
+  </div>
+  <div class="mast-rule"></div>
+</header>
+
+<div class="page">
+  <div class="grid">
+    <!-- LEFT -->
+    <div>
+      <div class="panel">
+        <span class="step-flag orange title">게시판 제목</span>
+        <div class="section-rule"></div>
+        <label>제목</label>
+        <input type="text" id="titleInput" value="투자센터대구WM 칭찬게시판">
+        <label>기준일</label>
+        <input type="date" id="dateInput">
+      </div>
+
+      <div class="panel">
+        <span class="step-flag orange title" style="display:inline-flex;align-items:center;gap:6px;">직원 명단 등록<span id="rosterCount" style="font-weight:400;opacity:.85;">0명</span></span>
+        <div class="section-rule"></div>
+        <div class="row3">
+          <div>
+            <label>팀명</label>
+            <select id="rosterTeamSelect">
+              <option value="1팀">1팀</option>
+              <option value="2팀">2팀</option>
+              <option value="3팀">3팀</option>
+              <option value="4팀">4팀</option>
+              <option value="5팀">5팀</option>
+              <option value="디지털">디지털</option>
+              <option value="직할">직할</option>
+            </select>
+          </div>
+          <div>
+            <label>직원명</label>
+            <input type="text" id="rosterNameInput" placeholder="이름 입력">
+          </div>
+          <div>
+            <label>직급</label>
+            <select id="rosterPositionSelect">
+              <option value="WM팀장">WM팀장</option>
+              <option value="부팀장">부팀장</option>
+              <option value="수석매니저">수석매니저</option>
+              <option value="PB이사">PB이사</option>
+              <option value="기타">기타</option>
+            </select>
+          </div>
+        </div>
+        <button class="btn block" id="addRosterBtn">명단에 등록 (시트에 바로 반영)</button>
+        <button class="btn ghost block" id="toggleRosterBtn" type="button"></button>
+        <div id="rosterGroups" style="margin-top:14px; display:none;"></div>
+        <p class="hint">여기서 등록·삭제하는 즉시 오른쪽 시트에 행이 추가·삭제돼요. 팀명·직원명·직급은 시트에 미리 채워지고, 실적 항목은 시트 칸을 직접 눌러 입력하시면 됩니다.</p>
+      </div>
+    </div>
+
+    <!-- RIGHT: 자료실 + 시트 + 최종본 버튼 -->
+    <div>
+      <div class="panel archive-panel">
+        <span class="step-flag title">지난 실적 자료실</span>
+        <div class="section-rule navy"></div>
+        <div class="row2" style="align-items:end;">
+          <div>
+            <label>조회할 날짜</label>
+            <input type="date" id="historyDateInput">
+          </div>
+          <div>
+            <button class="btn block" id="viewHistoryBtn" style="margin-top:0;">지난 게시판 보기</button>
+          </div>
+        </div>
+        <p class="hint">※ 기준일을 입력하고 시트를 채워두면 그 날짜로 자동 저장돼요. 여기서 날짜를 골라 지난 칭찬게시판을 다시 확인할 수 있어요.</p>
+        <div id="historyResult" style="margin-top:16px;"></div>
+      </div>
+
+      <div class="panel">
+      <div class="table-toolbar">
+        <div>
+          <span class="step-flag title">실적 입력 시트</span>
+        </div>
+        <div class="btn-row">
+          <button class="btn ghost" id="fillSampleBtn">샘플 값 채우기</button>
+          <button class="btn ghost" id="resetAllBtn">전체 초기화</button>
+        </div>
+      </div>
+      <div class="section-rule"></div>
+      <div id="captureArea">
+        <table class="board" id="boardTable">
+          <caption id="captionText">투자센터대구WM 칭찬게시판</caption>
+          <colgroup>
+            <col style="width:52px">
+            <col style="width:68px">
+            <col style="width:82px">
+            <col style="width:62px">
+            <col style="width:54px">
+            <col style="width:54px">
+            <col style="width:54px">
+            <col style="width:54px">
+            <col style="width:58px">
+            <col style="width:58px">
+            <col style="width:54px">
+            <col style="width:46px">
+            <col>
+          </colgroup>
+          <thead>
+            <tr>
+              <th rowspan="2">팀명</th>
+              <th rowspan="2">직원명</th>
+              <th rowspan="2">직 급</th>
+              <th rowspan="2">수익<br>(만원)</th>
+              <th colspan="2">주식매매(억)</th>
+              <th colspan="2">자산증대(억)</th>
+              <th rowspan="2">연금자산<br>(억)</th>
+              <th rowspan="2">금융상품<br>(억)</th>
+              <th colspan="2">Wrap</th>
+              <th rowspan="2">상세내용<br>(매매종목,성과과정 자세히 기입)</th>
+            </tr>
+            <tr>
+              <th>해외</th><th>국내</th>
+              <th>해외</th><th>국내</th>
+              <th>금액(억)</th><th>건수(건)</th>
+            </tr>
+          </thead>
+          <tbody id="boardBody"></tbody>
+        </table>
+      </div>
+      <p class="hint">※ 왼쪽에서 직원을 등록하면 이 시트에 바로 행이 생겨요. 각 칸(수익, 주식매매, 자산증대, 연금자산, 금융상품, Wrap, 상세내용)을 눌러 직접 입력하면 실시간으로 저장되고 합계도 자동 계산돼요.</p>
+      <button class="btn block big" id="downloadBtn">최종 칭찬게시판 이미지로 만들기</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script>
+(function(){
+  "use strict";
+
+  var STORAGE_KEY = "praiseBoardData_v5";
+  var TEAM_DISPLAY_ORDER = ["1팀","2팀","3팀","4팀","5팀","디지털","직할"];
+  var NUM_FIELDS = ["profit","stockOverseas","stockDomestic","assetOverseas","assetDomestic","pension","fin","wrapAmount","wrapCount"];
+
+  var DEFAULT_ROSTER = [
+    {team:"1팀",name:"장동식",position:"WM팀장"},
+    {team:"1팀",name:"박주영",position:"부팀장"},
+    {team:"1팀",name:"손순도",position:"수석매니저"},
+    {team:"1팀",name:"이창욱",position:"수석매니저"},
+    {team:"1팀",name:"정가은",position:"수석매니저"},
+    {team:"2팀",name:"김재은",position:"WM팀장"},
+    {team:"2팀",name:"권은진",position:"부팀장"},
+    {team:"2팀",name:"김창수",position:"수석매니저"},
+    {team:"2팀",name:"정효진",position:"수석매니저"},
+    {team:"3팀",name:"한영숙",position:"WM팀장"},
+    {team:"3팀",name:"주호준",position:"부팀장"},
+    {team:"3팀",name:"김유희",position:"수석매니저"},
+    {team:"3팀",name:"하태섭",position:"수석매니저"},
+    {team:"3팀",name:"한상민",position:"수석매니저"},
+    {team:"4팀",name:"박찬용",position:"WM팀장"},
+    {team:"4팀",name:"김시내",position:"부팀장"},
+    {team:"4팀",name:"강희언",position:"수석매니저"},
+    {team:"4팀",name:"권수영",position:"수석매니저"},
+    {team:"5팀",name:"김동주",position:"WM팀장"},
+    {team:"5팀",name:"하상용",position:"부팀장"},
+    {team:"5팀",name:"박동윤",position:"수석매니저"},
+    {team:"5팀",name:"이한나",position:"수석매니저"},
+    {team:"5팀",name:"정희정",position:"수석매니저"},
+    {team:"디지털",name:"황용호",position:"수석매니저"},
+    {team:"디지털",name:"김나영",position:"수석매니저"},
+    {team:"디지털",name:"서영준",position:"수석매니저"},
+    {team:"디지털",name:"장지현",position:"수석매니저"},
+    {team:"디지털",name:"최대림",position:"수석매니저"},
+    {team:"직할",name:"임재환",position:"PB이사"},
+    {team:"직할",name:"배철민",position:"PB이사"},
+    {team:"직할",name:"박경애",position:"수석매니저"}
+  ];
+
+  var SAMPLE_VALUES = {
+    "장동식":{}, "박주영":{profit:100,stockDomestic:2,detail:"반도체 top10 매도"},
+    "손순도":{profit:200,stockDomestic:4,pension:3.2,detail:"나스닥/S&P500/나스닥100 매수 / 퇴직연금IRP 입금"},
+    "정가은":{stockDomestic:0.3,detail:"나스닥 S&P 매수"},
+    "김재은":{assetDomestic:0.3,detail:"달러환전"},
+    "정효진":{profit:50,assetOverseas:1.4,fin:0.37,detail:"자산배분 1.4억(달러환전) / 금융상품 0.37억 (ELS 청약)"},
+    "한영숙":{profit:150,assetOverseas:1,detail:"브라질국채"},
+    "주호준":{assetOverseas:0.25,detail:"달러환전"}
+  };
+
+  function withIds(list){ return list.map(function(m){ return Object.assign({id:uid()}, m); }); }
+  function uid(){ return "e" + Date.now() + Math.floor(Math.random()*1000); }
+
+  var state = {
+    title: "투자센터대구WM 칭찬게시판",
+    date: "",
+    roster: [],
+    values: {},
+    history: {}
+  };
+  var hasSavedData = false;
+
+  function loadState(){
+    try{
+      var raw = localStorage.getItem(STORAGE_KEY);
+      if(raw){ state = Object.assign(state, JSON.parse(raw)); hasSavedData = true; }
+    }catch(e){}
+    if(!hasSavedData){ state.roster = withIds(DEFAULT_ROSTER); }
+    if(!state.values) state.values = {};
+    if(!state.history) state.history = {};
+  }
+  function saveState(){
+    try{
+      if(state.date){
+        state.history[state.date] = {
+          title: state.title,
+          roster: JSON.parse(JSON.stringify(state.roster)),
+          values: JSON.parse(JSON.stringify(state.values))
+        };
+      }
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    }catch(e){}
+  }
+
+  function showToast(msg){
+    var el = document.getElementById("toast");
+    el.textContent = msg;
+    el.classList.add("show");
+    clearTimeout(showToast._tm);
+    showToast._tm = setTimeout(function(){ el.classList.remove("show"); }, 1500);
+  }
+
+  function getVal(id){
+    if(!state.values[id]) state.values[id] = {};
+    return state.values[id];
+  }
+
+  // ---------- roster ----------
+  var rosterVisible = false;
+  document.getElementById("toggleRosterBtn").addEventListener("click", function(){
+    rosterVisible = !rosterVisible;
+    document.getElementById("rosterGroups").style.display = rosterVisible ? "" : "none";
+    document.getElementById("toggleRosterBtn").textContent = rosterVisible ? "명단 접기" : "팀별 명단 확인";
+  });
+  document.getElementById("toggleRosterBtn").textContent = "팀별 명단 확인";
+
+  function teamSortIndex(team){ var i = TEAM_DISPLAY_ORDER.indexOf(team); return i === -1 ? 999 : i; }
+  function getRosterTeams(){
+    var teams = [];
+    state.roster.forEach(function(m){ if(teams.indexOf(m.team) === -1) teams.push(m.team); });
+    teams.sort(function(a,b){ var d = teamSortIndex(a) - teamSortIndex(b); return d !== 0 ? d : a.localeCompare(b); });
+    return teams;
+  }
+
+  function renderRoster(){
+    document.getElementById("rosterCount").textContent = state.roster.length + "명";
+    var box = document.getElementById("rosterGroups");
+    box.innerHTML = "";
+    var teams = getRosterTeams();
+    if(teams.length === 0){
+      box.innerHTML = '<div class="empty">등록된 직원이 없어요</div>';
+      return;
+    }
+    teams.forEach(function(team){
+      var group = document.createElement("div");
+      group.className = "roster-group";
+      var title = document.createElement("div");
+      title.className = "roster-group-title";
+      title.textContent = team;
+      group.appendChild(title);
+      var chipList = document.createElement("div");
+      chipList.className = "chip-list";
+      state.roster.filter(function(m){ return m.team === team; }).forEach(function(m){
+        var chip = document.createElement("div");
+        chip.className = "chip";
+        chip.innerHTML = '<span>' + escapeHtml(m.name) + '</span><span class="pos">' + escapeHtml(m.position) + '</span>';
+        var btn = document.createElement("button");
+        btn.textContent = "\u00d7";
+        btn.addEventListener("click", function(){
+          state.roster = state.roster.filter(function(x){ return x.id !== m.id; });
+          delete state.values[m.id];
+          saveState(); renderRoster(); renderSheet();
+        });
+        chip.appendChild(btn);
+        chipList.appendChild(chip);
+      });
+      group.appendChild(chipList);
+      box.appendChild(group);
+    });
+  }
+
+  document.getElementById("addRosterBtn").addEventListener("click", function(){
+    var team = document.getElementById("rosterTeamSelect").value;
+    var name = document.getElementById("rosterNameInput").value.trim();
+    var position = document.getElementById("rosterPositionSelect").value;
+    if(!name){ showToast("직원명을 입력해주세요"); return; }
+    var dup = state.roster.some(function(m){ return m.team === team && m.name === name; });
+    if(dup){ showToast("이미 등록된 이름이에요"); return; }
+    state.roster.push({ id: uid(), team: team, name: name, position: position });
+    document.getElementById("rosterNameInput").value = "";
+    saveState();
+    renderRoster();
+    renderSheet();
+    showToast("명단에 등록하고 시트에 반영했어요");
+  });
+  document.getElementById("rosterNameInput").addEventListener("keydown", function(e){
+    if(e.key === "Enter"){ e.preventDefault(); document.getElementById("addRosterBtn").click(); }
+  });
+
+  // ---------- sheet (result-first, inline editable) ----------
+  function fmtWon(v){ return v ? (v.toLocaleString("ko-KR") + "\ub9cc\uc6d0") : ""; }
+  function fmtEok(v){ return v ? (v.toFixed(2).replace(/\.?0+$/,"") + "\uc5b5") : ""; }
+  function fmtCount(v){ return v ? (v + "\uac74") : ""; }
+  function escapeHtml(s){
+    if(!s) return "";
+    return String(s).replace(/[&<>"']/g, function(c){
+      return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c];
+    });
+  }
+  function formatDate(iso){
+    if(!iso) return "";
+    var d = new Date(iso + "T00:00:00");
+    if(isNaN(d.getTime())) return iso;
+    var yy = String(d.getFullYear()).slice(2);
+    var mm = String(d.getMonth()+1).padStart(2,"0");
+    var dd = String(d.getDate()).padStart(2,"0");
+    var days = ["\uc77c","\uc6d4","\ud654","\uc218","\ubaa9","\uae08","\ud1a0"];
+    return yy + "." + mm + "." + dd + "(" + days[d.getDay()] + ")";
+  }
+
+  function inputCell(cls, id, field, type, value, step, unit){
+    var v = (value === undefined || value === null || value === 0 || value === "") ? "" : value;
+    var showUnit = v !== "" ? "inline" : "none";
+    return '<td class="' + cls + '"><span class="cell-wrap"><input type="' + type + '" data-id="' + id + '" data-field="' + field + '"' +
+      (step ? ' step="' + step + '"' : '') + ' value="' + escapeHtml(String(v)) + '">' +
+      '<span class="unit" style="display:' + showUnit + '">' + unit + '</span></span></td>';
+  }
+
+  function renderSheet(){
+    document.getElementById("captionText").textContent =
+      state.title + (state.date ? (" _ " + formatDate(state.date)) : "");
+
+    var body = document.getElementById("boardBody");
+    body.innerHTML = "";
+    var teams = getRosterTeams();
+    var total = state.roster.length;
+
+    if(total === 0){
+      body.innerHTML = '<tr><td colspan="13" class="empty-cell" style="padding:26px;color:#8b93a1;">왼쪽에서 직원을 등록하면 이 시트에 행이 만들어져요.</td></tr>';
+      return;
+    }
+
+    teams.forEach(function(team){
+      var members = state.roster.filter(function(m){ return m.team === team; });
+      members.forEach(function(m, idx){
+        var v = getVal(m.id);
+        var tr = document.createElement("tr");
+        var cells = "";
+        if(idx === 0){
+          cells += '<td class="team" rowspan="' + members.length + '">' + escapeHtml(team) + '</td>';
+        }
+        cells += '<td class="name">' + escapeHtml(m.name) + '</td>';
+        cells += '<td class="position">' + escapeHtml(m.position) + '</td>';
+        cells += inputCell("profit", m.id, "profit", "number", v.profit, null, "만원");
+        cells += inputCell("stock", m.id, "stockOverseas", "number", v.stockOverseas, "0.01", "억");
+        cells += inputCell("stock", m.id, "stockDomestic", "number", v.stockDomestic, "0.01", "억");
+        cells += inputCell("asset", m.id, "assetOverseas", "number", v.assetOverseas, "0.01", "억");
+        cells += inputCell("asset", m.id, "assetDomestic", "number", v.assetDomestic, "0.01", "억");
+        cells += inputCell("pension", m.id, "pension", "number", v.pension, "0.01", "억");
+        cells += inputCell("fin", m.id, "fin", "number", v.fin, "0.01", "억");
+        cells += inputCell("wrap", m.id, "wrapAmount", "number", v.wrapAmount, "0.01", "억");
+        cells += inputCell("wrap", m.id, "wrapCount", "number", v.wrapCount, null, "건");
+        cells += '<td class="detail"><textarea data-id="' + m.id + '" data-field="detail" rows="1">' + escapeHtml(v.detail || "") + '</textarea></td>';
+        tr.innerHTML = cells;
+        body.appendChild(tr);
+      });
+    });
+
+    var trTotal = document.createElement("tr");
+    trTotal.className = "total";
+    trTotal.id = "totalRow";
+    trTotal.innerHTML =
+      '<td colspan="3">합계</td>' +
+      '<td id="tot-profit"></td><td id="tot-stockOverseas"></td><td id="tot-stockDomestic"></td>' +
+      '<td id="tot-assetOverseas"></td><td id="tot-assetDomestic"></td>' +
+      '<td id="tot-pension"></td><td id="tot-fin"></td>' +
+      '<td id="tot-wrapAmount"></td><td id="tot-wrapCount"></td><td></td>';
+    body.appendChild(trTotal);
+    updateTotals();
+    body.querySelectorAll("textarea[data-field='detail']").forEach(autoGrow);
+  }
+
+  function updateTotals(){
+    var sums = {}; NUM_FIELDS.forEach(function(f){ sums[f] = 0; });
+    Object.keys(state.values).forEach(function(id){
+      var v = state.values[id];
+      NUM_FIELDS.forEach(function(f){ sums[f] += (parseFloat(v[f]) || 0); });
+    });
+    document.getElementById("tot-profit").textContent = fmtWon(sums.profit);
+    document.getElementById("tot-stockOverseas").textContent = fmtEok(sums.stockOverseas);
+    document.getElementById("tot-stockDomestic").textContent = fmtEok(sums.stockDomestic);
+    document.getElementById("tot-assetOverseas").textContent = fmtEok(sums.assetOverseas);
+    document.getElementById("tot-assetDomestic").textContent = fmtEok(sums.assetDomestic);
+    document.getElementById("tot-pension").textContent = fmtEok(sums.pension);
+    document.getElementById("tot-fin").textContent = fmtEok(sums.fin);
+    document.getElementById("tot-wrapAmount").textContent = fmtEok(sums.wrapAmount);
+    document.getElementById("tot-wrapCount").textContent = fmtCount(sums.wrapCount);
+  }
+
+  // event delegation: live cell editing -> autosave
+  document.getElementById("boardBody").addEventListener("input", function(e){
+    var el = e.target;
+    var id = el.getAttribute("data-id");
+    var field = el.getAttribute("data-field");
+    if(!id || !field) return;
+    var v = getVal(id);
+    if(field === "detail"){
+      v.detail = el.value;
+      autoGrow(el);
+    } else if(el.tagName === "INPUT"){
+      v[field] = parseFloat(el.value) || 0;
+      var unitEl = el.parentElement.querySelector(".unit");
+      if(unitEl) unitEl.style.display = (el.value !== "" && parseFloat(el.value) !== 0) ? "inline" : "none";
+    } else {
+      return;
+    }
+    saveState();
+    updateTotals();
+  });
+
+  function autoGrow(el){
+    el.style.height = "auto";
+    el.style.height = el.scrollHeight + "px";
+  }
+
+  // ---------- top settings (autosave) ----------
+  document.getElementById("titleInput").addEventListener("input", function(e){ state.title = e.target.value; saveState(); renderSheet(); });
+  ["input","change"].forEach(function(evt){
+    document.getElementById("dateInput").addEventListener(evt, function(e){
+      state.date = e.target.value; saveState(); renderSheet(); showToast("저장했어요");
+    });
+  });
+
+
+  // ---------- final image ----------
+  document.getElementById("downloadBtn").addEventListener("click", function(){
+    if(typeof html2canvas === "undefined"){ showToast("이미지 생성 라이브러리를 불러오지 못했어요"); return; }
+    showToast("이미지를 만들고 있어요...");
+    var target = document.getElementById("captureArea");
+    html2canvas(target, { scale: 2, backgroundColor: "#ffffff" }).then(function(canvas){
+      canvas.toBlob(function(blob){
+        var url = URL.createObjectURL(blob);
+        var a = document.createElement("a");
+        var fname = (state.title || "praise-board").replace(/[\\/:*?"<>|]/g, "") + (state.date ? ("_" + state.date) : "") + ".png";
+        a.href = url; a.download = fname;
+        document.body.appendChild(a); a.click(); document.body.removeChild(a);
+        setTimeout(function(){ URL.revokeObjectURL(url); }, 2000);
+        showToast("최종본 이미지를 다운로드했어요");
+      });
+    }).catch(function(){
+      showToast("이미지 생성에 실패했어요");
+    });
+  });
+
+  // ---------- sample / reset ----------
+  document.getElementById("fillSampleBtn").addEventListener("click", function(){
+    if(!confirm("등록된 직원 중 이름이 일치하는 항목에 샘플 값을 채워요. 계속할까요?")) return;
+    var filled = 0;
+    state.roster.forEach(function(m){
+      if(SAMPLE_VALUES[m.name]){
+        state.values[m.id] = Object.assign({}, SAMPLE_VALUES[m.name]);
+        filled++;
+      }
+    });
+    saveState();
+    renderSheet();
+    showToast(filled > 0 ? (filled + "명에 샘플 값을 채웠어요") : "일치하는 이름이 없어요");
+  });
+
+  document.getElementById("resetAllBtn").addEventListener("click", function(){
+    if(!confirm("모든 명단과 입력값을 초기화할까요? (지난 실적 기록은 유지됩니다)")) return;
+    var keepHistory = state.history;
+    state = { title:"투자센터대구WM 칭찬게시판", date:"", roster:[], values:{}, history:keepHistory };
+    saveState();
+    document.getElementById("titleInput").value = state.title;
+    document.getElementById("dateInput").value = "";
+    renderRoster();
+    renderSheet();
+    showToast("초기화했어요");
+  });
+
+  // ---------- STEP 4: history viewer ----------
+  function getTeamsFromRoster(roster){
+    var teams = [];
+    roster.forEach(function(m){ if(teams.indexOf(m.team) === -1) teams.push(m.team); });
+    teams.sort(function(a,b){ var d = teamSortIndex(a) - teamSortIndex(b); return d !== 0 ? d : a.localeCompare(b); });
+    return teams;
+  }
+
+  function buildHistoryTableHTML(snap, dateStr){
+    var roster = snap.roster || [];
+    var values = snap.values || {};
+    var teams = getTeamsFromRoster(roster);
+    var total = roster.length;
+    var caption = (snap.title || "") + (dateStr ? (" _ " + formatDate(dateStr)) : "");
+
+    var thead =
+      '<thead><tr>' +
+      '<th rowspan="2">팀명</th><th rowspan="2">직원명</th><th rowspan="2">직 급</th>' +
+      '<th rowspan="2">수익<br>(만원)</th><th colspan="2">주식매매(억)</th><th colspan="2">자산증대(억)</th>' +
+      '<th rowspan="2">연금자산<br>(억)</th><th rowspan="2">금융상품<br>(억)</th><th colspan="2">Wrap</th>' +
+      '<th rowspan="2">상세내용<br>(매매종목,성과과정 자세히 기입)</th>' +
+      '</tr><tr><th>해외</th><th>국내</th><th>해외</th><th>국내</th><th>금액(억)</th><th>건수(건)</th></tr></thead>';
+
+    var body = "";
+    if(total === 0){
+      body = '<tr><td colspan="13" class="empty-cell" style="padding:26px;color:#8b93a1;">저장된 직원이 없어요.</td></tr>';
+    } else {
+      var sums = {}; NUM_FIELDS.forEach(function(f){ sums[f] = 0; });
+      teams.forEach(function(team){
+        var members = roster.filter(function(m){ return m.team === team; });
+        members.forEach(function(m, idx){
+          var v = values[m.id] || {};
+          NUM_FIELDS.forEach(function(f){ sums[f] += (parseFloat(v[f]) || 0); });
+          body += "<tr>";
+          if(idx === 0){
+            body += '<td class="team" rowspan="' + members.length + '">' + escapeHtml(team) + '</td>';
+          }
+          body += '<td class="name">' + escapeHtml(m.name) + '</td>';
+          body += '<td class="position">' + escapeHtml(m.position) + '</td>';
+          body += '<td class="profit">' + fmtWon(v.profit) + '</td>';
+          body += '<td class="stock">' + fmtEok(v.stockOverseas) + '</td>';
+          body += '<td class="stock">' + fmtEok(v.stockDomestic) + '</td>';
+          body += '<td class="asset">' + fmtEok(v.assetOverseas) + '</td>';
+          body += '<td class="asset">' + fmtEok(v.assetDomestic) + '</td>';
+          body += '<td class="pension">' + fmtEok(v.pension) + '</td>';
+          body += '<td class="fin">' + fmtEok(v.fin) + '</td>';
+          body += '<td class="wrap">' + fmtEok(v.wrapAmount) + '</td>';
+          body += '<td class="wrap">' + fmtCount(v.wrapCount) + '</td>';
+          body += '<td class="detail">' + escapeHtml(v.detail || "") + '</td>';
+          body += "</tr>";
+        });
+      });
+      body += '<tr class="total"><td colspan="3">합계</td>' +
+        '<td>' + fmtWon(sums.profit) + '</td>' +
+        '<td>' + fmtEok(sums.stockOverseas) + '</td>' +
+        '<td>' + fmtEok(sums.stockDomestic) + '</td>' +
+        '<td>' + fmtEok(sums.assetOverseas) + '</td>' +
+        '<td>' + fmtEok(sums.assetDomestic) + '</td>' +
+        '<td>' + fmtEok(sums.pension) + '</td>' +
+        '<td>' + fmtEok(sums.fin) + '</td>' +
+        '<td>' + fmtEok(sums.wrapAmount) + '</td>' +
+        '<td>' + fmtCount(sums.wrapCount) + '</td>' +
+        '<td></td></tr>';
+    }
+
+    return '<div id="historyCapture" style="background:#fff;padding:20px;border-radius:4px;overflow-x:auto;border:1px solid var(--hairline-soft);">' +
+      '<table class="board"><caption>' + escapeHtml(caption) + '</caption>' + thead + '<tbody>' + body + '</tbody></table>' +
+      '</div>' +
+      '<button class="btn ghost block" id="historyDownloadBtn" type="button" style="margin-top:12px;">이 날짜 이미지로 저장</button>';
+  }
+
+  document.getElementById("viewHistoryBtn").addEventListener("click", function(){
+    var date = document.getElementById("historyDateInput").value;
+    var box = document.getElementById("historyResult");
+    if(!date){ showToast("조회할 날짜를 선택해주세요"); return; }
+    var snap = state.history[date];
+    if(!snap){
+      box.innerHTML = '<div class="empty">' + formatDate(date) + '에 저장된 칭찬게시판 기록이 없어요.</div>';
+      return;
+    }
+    box.innerHTML = buildHistoryTableHTML(snap, date);
+    document.getElementById("historyDownloadBtn").addEventListener("click", function(){
+      if(typeof html2canvas === "undefined"){ showToast("이미지 생성 라이브러리를 불러오지 못했어요"); return; }
+      showToast("이미지를 만들고 있어요...");
+      html2canvas(document.getElementById("historyCapture"), { scale: 2, backgroundColor: "#ffffff" }).then(function(canvas){
+        canvas.toBlob(function(blob){
+          var url = URL.createObjectURL(blob);
+          var a = document.createElement("a");
+          var fname = (snap.title || "praise-board") + "_" + date + ".png";
+          a.href = url; a.download = fname;
+          document.body.appendChild(a); a.click(); document.body.removeChild(a);
+          setTimeout(function(){ URL.revokeObjectURL(url); }, 2000);
+          showToast("이미지를 다운로드했어요");
+        });
+      }).catch(function(){ showToast("이미지 생성에 실패했어요"); });
+    });
+  });
+
+  // ---------- init ----------
+  loadState();
+  document.getElementById("titleInput").value = state.title;
+  document.getElementById("dateInput").value = state.date;
+
+  renderRoster();
+  renderSheet();
+  if(!hasSavedData) saveState();
+})();
+</script>
+</body>
+</html>
