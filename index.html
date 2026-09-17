@@ -41,9 +41,11 @@ header.mast{ background:var(--secondary); position:relative; padding:34px 20px 2
 .mast-title-main{ color:#fff; font-weight:700; letter-spacing:-0.3px; font-size:clamp(16px, 5.2vw, 40px); }
 .mast-sub{ font-size:12px; color:rgba(255,255,255,0.6); margin:0; text-align:center; }
 .mast-rule{ height:2px; background:var(--primary); position:absolute; bottom:0; left:0; right:0; }
-@media (max-width:380px){
+@media (max-width:480px){
   header.mast{ padding:28px 14px 22px; }
-  .mast-title{ gap:5px; }
+  .mast-title{ flex-direction:column; align-items:center; justify-content:center; gap:2px; white-space:normal; }
+  .mast-title-sub, .mast-title-main{ white-space:nowrap; }
+  .mast-sub{ white-space:nowrap; overflow:hidden; }
 }
 
 .page{ max-width:1280px; margin:0 auto; padding:32px 20px 64px; }
@@ -122,7 +124,7 @@ input:focus, select:focus{ outline:none; border-color:var(--primary); box-shadow
 .table-toolbar{ display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; flex-wrap:wrap; gap:10px; }
 .table-toolbar .btn-row{ margin-top:0; }
 
-#captureArea{ background:#ffffff; border-radius:4px; border:1px solid var(--hairline-soft); max-height:70vh; overflow:auto; position:relative; touch-action:pan-x pan-y pinch-zoom; }
+#captureArea{ background:#ffffff; border-radius:4px; border:1px solid var(--hairline-soft); max-height:70vh; overflow:auto; position:relative; touch-action:pan-x pan-y; }
 #captureArea.exporting{ max-height:none; overflow:visible; }
 #captureArea.exporting .date-chip{ background:none; border:none; width:auto; height:auto; padding:0; }
 #captureArea.exporting .date-display{ font-size:19px; font-weight:800; }
@@ -135,7 +137,7 @@ input:focus, select:focus{ outline:none; border-color:var(--primary); box-shadow
 #captureArea.exporting table.board td.detail textarea{ font-size:18px; }
 #captureArea.exporting .cell-wrap .unit{ font-size:14px; }
 .sheet-title-bar{
-  position:sticky; top:0; z-index:3; background:var(--secondary); width:100%; min-width:960px; box-sizing:border-box;
+  position:sticky; top:0; z-index:3; background:var(--secondary); width:100%; min-width:1280px; box-sizing:border-box;
   display:flex; align-items:center; justify-content:center; gap:10px;
   height:56px; padding:0 12px;
 }
@@ -153,7 +155,7 @@ input:focus, select:focus{ outline:none; border-color:var(--primary); box-shadow
   outline:none; background:rgba(255,255,255,0.22); border-radius:4px;
 }
 .date-chip:focus-within{ outline:2px solid rgba(255,255,255,0.6); outline-offset:1px; }
-table.board{ border-collapse:collapse; width:100%; min-width:960px; table-layout:fixed; font-size:13.5px; color:#1A1A1A; }
+table.board{ border-collapse:collapse; width:100%; min-width:1280px; table-layout:fixed; font-size:13.5px; color:#1A1A1A; }
 table.board caption{
   background:var(--secondary); color:#fff; font-size:16px; font-weight:700; padding:11px 0;
   border:1px solid var(--secondary); letter-spacing:0.2px;
@@ -754,9 +756,12 @@ table.board td input[type="number"]::-webkit-inner-spin-button{ -webkit-appearan
     var swapped = null;
     var widened = false;
     var originalWidth = target.style.width;
+    var originalZoom = target.style.zoom;
     var colInfo = null;
 
     ready.then(function(){
+      // 핀치줌 상태와 무관하게 항상 원본 크기로 캡처되도록 잠시 100%로 되돌린다.
+      target.style.zoom = 1;
       // 상세내용 칸의 줄바꿈 높이를 최신 폰트 기준으로 다시 계산 (잘림 방지 여유값 포함)
       target.querySelectorAll("textarea[data-field='detail']").forEach(autoGrow);
       // 숫자칸을 캡처 순간만 일반 텍스트로 바꿔서, 숫자와 단위 글자의 높이가
@@ -783,6 +788,7 @@ table.board td input[type="number"]::-webkit-inner-spin-button{ -webkit-appearan
     }).then(function(contentCanvas){
       target.classList.remove("exporting");
       restoreNumberInputsAfterExport(swapped);
+      target.style.zoom = originalZoom;
       if(widened){
         target.style.width = originalWidth;
         restoreColumnWidths(colInfo);
@@ -819,6 +825,7 @@ table.board td input[type="number"]::-webkit-inner-spin-button{ -webkit-appearan
     }).catch(function(){
       target.classList.remove("exporting");
       if(swapped) restoreNumberInputsAfterExport(swapped);
+      target.style.zoom = originalZoom;
       if(widened){
         target.style.width = originalWidth;
         restoreColumnWidths(colInfo);
@@ -917,6 +924,83 @@ table.board td input[type="number"]::-webkit-inner-spin-button{ -webkit-appearan
   window.addEventListener("load", applyStickyOffsets);
   window.addEventListener("resize", applyStickyOffsets);
 
+  // ---------- mobile masthead: match title line widths, fit subtitle to one line ----------
+  function measureTextWidth(text, font){
+    var canvas = measureTextWidth._c || (measureTextWidth._c = document.createElement("canvas"));
+    var ctx = canvas.getContext("2d");
+    ctx.font = font;
+    return ctx.measureText(text).width;
+  }
+  function adjustMastheadForMobile(){
+    var sub = document.querySelector(".mast-title-sub");
+    var main = document.querySelector(".mast-title-main");
+    var guide = document.querySelector(".mast-sub");
+    if(!sub || !main || !guide) return;
+    var isMobile = window.innerWidth <= 480;
+    if(!isMobile){
+      main.style.fontSize = "";
+      guide.style.fontSize = "";
+      return;
+    }
+    // "칭찬게시판" 줄의 가로폭을 위 줄("미래에셋증권 투자센터대구WM")과 같게 맞춘다.
+    var subWidth = sub.getBoundingClientRect().width;
+    var mainCS = getComputedStyle(main);
+    var baseSize = 30;
+    var w = measureTextWidth(main.textContent, mainCS.fontWeight + " " + baseSize + "px " + mainCS.fontFamily);
+    if(w > 0 && subWidth > 0){
+      var newSize = Math.max(18, Math.min((subWidth / w) * baseSize, 60));
+      main.style.fontSize = newSize + "px";
+    }
+    // 안내 문구가 한 줄에 들어가도록 폭에 맞춰 글자 크기를 줄인다.
+    var container = guide.closest(".mast-inner") || guide.parentElement;
+    var containerWidth = container.getBoundingClientRect().width - 8;
+    var guideCS = getComputedStyle(guide);
+    var testSize = 16;
+    var gw = measureTextWidth(guide.textContent, guideCS.fontWeight + " " + testSize + "px " + guideCS.fontFamily);
+    if(gw > 0 && containerWidth > 0){
+      var newGuideSize = Math.min(testSize, (containerWidth / gw) * testSize);
+      guide.style.fontSize = Math.max(9, newGuideSize) + "px";
+    }
+  }
+  window.addEventListener("resize", adjustMastheadForMobile);
+  window.addEventListener("load", adjustMastheadForMobile);
+  if(document.fonts && document.fonts.ready){ document.fonts.ready.then(adjustMastheadForMobile); }
+
+  // ---------- pinch-to-zoom for the sheet (mobile) ----------
+  (function(){
+    var sheetEl = document.getElementById("captureArea");
+    if(!sheetEl) return;
+    var pinch = { active:false, startDist:0, startZoom:1 };
+    function getDistance(touches){
+      var dx = touches[0].clientX - touches[1].clientX;
+      var dy = touches[0].clientY - touches[1].clientY;
+      return Math.sqrt(dx * dx + dy * dy);
+    }
+    sheetEl.addEventListener("touchstart", function(e){
+      if(e.touches.length === 2){
+        pinch.active = true;
+        pinch.startDist = getDistance(e.touches);
+        pinch.startZoom = parseFloat(sheetEl.style.zoom) || 1;
+      }
+    }, { passive:true });
+    sheetEl.addEventListener("touchmove", function(e){
+      if(pinch.active && e.touches.length === 2){
+        e.preventDefault();
+        var dist = getDistance(e.touches);
+        if(pinch.startDist > 0){
+          var scale = pinch.startZoom * (dist / pinch.startDist);
+          scale = Math.min(Math.max(scale, 0.6), 2.5);
+          sheetEl.style.zoom = scale;
+        }
+      }
+    }, { passive:false });
+    function endPinch(e){
+      if(e.touches.length < 2) pinch.active = false;
+    }
+    sheetEl.addEventListener("touchend", endPinch);
+    sheetEl.addEventListener("touchcancel", endPinch);
+  })();
+
   // ---------- init ----------
   loadState();
   state.title = "투자센터대구WM 칭찬게시판";
@@ -927,6 +1011,7 @@ table.board td input[type="number"]::-webkit-inner-spin-button{ -webkit-appearan
   renderRoster();
   renderSheet();
   applyStickyOffsets();
+  adjustMastheadForMobile();
   saveState();
 })();
 </script>
