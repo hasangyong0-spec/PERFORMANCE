@@ -350,11 +350,6 @@ table.board td input[type="number"]::-webkit-inner-spin-button{ -webkit-appearan
         <tbody id="boardBody"></tbody>
       </table>
     </div>
-    <div class="btn-row">
-      <button class="btn soft tight" id="tempSaveBtn">현재 실적<br>저장하기</button>
-      <button class="btn soft tight" id="resetAllBtn">전체<br>초기화</button>
-      <button class="btn soft tight" id="undoResetBtn">이전으로<br>되돌리기</button>
-    </div>
     <button class="btn block big" id="downloadBtn">최종 칭찬게시판 이미지로 만들기</button>
   </div>
 
@@ -1199,11 +1194,6 @@ import { getDatabase, ref, onValue, set, update, remove, get, child }
     return d.getFullYear() + "-" + mm + "-" + dd;
   }
 
-  document.getElementById("tempSaveBtn").addEventListener("click", function(){
-    saveState();
-    showToast(formatDate(state.date) + " 실적으로 저장했어요");
-  });
-
   // native confirm()/alert() are blocked in some sandboxed preview frames,
   // so use a small in-page modal instead.
   function showConfirm(message, onOk){
@@ -1235,19 +1225,6 @@ import { getDatabase, ref, onValue, set, update, remove, get, child }
   }
 
   var BACKUP_KEY = STORAGE_KEY + "_backup";
-
-  document.getElementById("resetAllBtn").addEventListener("click", function(){
-    showConfirm("지금 보이는 날짜의 실적 값을 초기화할까요? (직원 명단은 유지되고, 모두에게 반영돼요)", function(){
-      remove(recordsRef(state.date)).catch(function(){
-        showToast("초기화에 실패했어요");
-      });
-      showToast("이 날짜의 실적을 초기화했어요");
-    });
-  });
-
-  document.getElementById("undoResetBtn").addEventListener("click", function(){
-    showToast("실시간 공유 모드에서는 되돌리기를 지원하지 않아요. 대신 엑셀 백업을 활용해 주세요");
-  });
 
 
   function applyStickyOffsets(){
