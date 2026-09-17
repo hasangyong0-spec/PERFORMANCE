@@ -124,19 +124,20 @@ input:focus, select:focus{ outline:none; border-color:var(--primary); box-shadow
 .table-toolbar{ display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; flex-wrap:wrap; gap:10px; }
 .table-toolbar .btn-row{ margin-top:0; }
 
-#captureArea{ background:#ffffff; border-radius:4px; border:1px solid var(--hairline-soft); max-height:70vh; overflow:auto; position:relative; touch-action:pan-x pan-y; }
+#captureArea{ background:#ffffff; border-radius:4px; border:1px solid var(--hairline-soft); overflow-x:auto; position:relative; touch-action:pan-x pan-y; }
 #captureArea.exporting{ max-height:none; overflow:visible; }
 #captureArea.exporting .date-chip{ background:none; border:none; width:auto; height:auto; padding:0; }
+#captureArea.exporting .calendar-popup{ display:none !important; }
 #captureArea.exporting .date-display{ font-size:19px; font-weight:800; }
 #captureArea.exporting .sheet-title-bar{ justify-content:center !important; }
-#captureArea.exporting table.board{ font-size:18px; }
-#captureArea.exporting .titlebar-title{ font-size:26px; }
+#captureArea.exporting table.board{ font-size:21px; }
+#captureArea.exporting .titlebar-title{ font-size:27px; }
 #captureArea.exporting table.board thead th{ font-size:18px; }
-#captureArea.exporting table.board td.position{ font-size:17px; }
+#captureArea.exporting table.board td.position{ font-size:20px; }
 #captureArea.exporting table.board td input,
-#captureArea.exporting .export-value{ font-size:18px; }
-#captureArea.exporting table.board td.detail textarea{ font-size:18px; }
-#captureArea.exporting .cell-wrap .unit{ font-size:14px; }
+#captureArea.exporting .export-value{ font-size:21px; }
+#captureArea.exporting table.board td.detail textarea{ font-size:20px; }
+#captureArea.exporting .cell-wrap .unit{ font-size:15px; }
 .sheet-title-bar{
   position:sticky; top:0; z-index:3; background:var(--secondary); width:100%; min-width:1280px; box-sizing:border-box;
   display:flex; align-items:center; justify-content:center; gap:10px;
@@ -147,18 +148,46 @@ input:focus, select:focus{ outline:none; border-color:var(--primary); box-shadow
 }
 .titlebar-title{
   border:none; background:transparent; color:#fff; font-weight:800; letter-spacing:0.2px;
-  padding:0; text-align:center; font-size:clamp(17px, 2.6vw, 24px); flex:0 1 auto; width:auto; white-space:nowrap;
+  padding:0; text-align:center; font-size:clamp(18px, 2.9vw, 27px); flex:0 1 auto; width:auto; white-space:nowrap;
 }
 .date-chip{
-  position:relative; flex:0 0 auto; width:92px; height:34px; display:flex; align-items:center; justify-content:center;
-  background:#0B4F86; border:1px solid rgba(255,255,255,0.4); border-radius:4px; overflow:hidden;
+  position:relative; flex:0 0 auto; width:92px; height:26px; display:flex; align-items:center; justify-content:center;
+  background:#0B4F86; border:1px solid rgba(255,255,255,0.4); border-radius:4px; cursor:pointer;
 }
-.date-native{ position:absolute; inset:0; width:100%; height:100%; opacity:0; border:none; cursor:pointer; padding:0; margin:0; }
-.date-display{ pointer-events:none; color:#fff; font-size:14px; font-weight:700; letter-spacing:0.2px; white-space:nowrap; }
+.date-display{ pointer-events:none; color:#fff; font-size:13px; font-weight:700; letter-spacing:0.2px; white-space:nowrap; }
 .titlebar-title:focus{
   outline:none; background:rgba(255,255,255,0.22); border-radius:4px;
 }
-.date-chip:focus-within{ outline:2px solid rgba(255,255,255,0.6); outline-offset:1px; }
+.date-chip:focus-visible, .date-chip:focus{ outline:2px solid rgba(255,255,255,0.6); outline-offset:1px; }
+
+.calendar-popup{
+  position:absolute; top:calc(100% + 6px); left:0; z-index:200; background:var(--canvas);
+  border:1px solid var(--hairline); border-radius:8px; box-shadow:0 10px 28px rgba(0,0,0,0.22);
+  padding:10px; width:236px; color:var(--ink); font-size:12.5px;
+}
+.calendar-popup.hidden{ display:none; }
+.cal-header{ display:flex; align-items:center; justify-content:space-between; margin-bottom:8px; }
+.cal-nav{
+  border:none; background:transparent; color:var(--ink); font-size:16px; font-weight:700;
+  cursor:pointer; width:26px; height:26px; border-radius:4px; display:flex; align-items:center; justify-content:center;
+}
+.cal-nav:hover{ background:var(--surface-subtle); }
+.cal-title{ font-size:13.5px; font-weight:700; }
+.cal-grid{ display:grid; grid-template-columns:repeat(7,1fr); gap:2px; text-align:center; }
+.cal-dow{ font-size:11px; color:var(--muted); font-weight:600; padding:4px 0; }
+.cal-day{
+  border:none; background:transparent; padding:6px 0; border-radius:4px; cursor:pointer;
+  font-size:12.5px; color:var(--ink); font-variant-numeric:tabular-nums;
+}
+.cal-day:hover{ background:var(--surface-subtle); }
+.cal-day.other-month{ color:var(--muted-soft); }
+.cal-day.today{ font-weight:700; color:var(--primary); }
+.cal-day.selected{ background:var(--primary); color:#fff; font-weight:700; }
+.cal-today-btn{
+  margin-top:8px; width:100%; border:1px solid var(--hairline); background:var(--canvas); color:var(--ink);
+  border-radius:4px; padding:6px 0; font-size:12px; font-weight:600; cursor:pointer;
+}
+.cal-today-btn:hover{ background:var(--surface-subtle); }
 table.board{ border-collapse:collapse; width:100%; min-width:1280px; table-layout:fixed; font-size:13.5px; color:#1A1A1A; }
 table.board caption{
   background:var(--secondary); color:#fff; font-size:16px; font-weight:700; padding:11px 0;
@@ -195,6 +224,13 @@ table.board td input[type="number"]::-webkit-outer-spin-button,
 table.board td input[type="number"]::-webkit-inner-spin-button{ -webkit-appearance:none; margin:0; }
 .cell-wrap{ display:flex; align-items:center; justify-content:flex-end; gap:2px; }
 .cell-wrap .unit{ color:var(--muted); font-size:11px; white-space:nowrap; flex-shrink:0; }
+@media (max-width:480px){
+  table.board{ font-size:14.5px; }
+  table.board td.position{ font-size:14px; }
+  table.board td input{ font-size:14.5px; }
+  table.board td.detail textarea{ font-size:14.5px; }
+  .cell-wrap .unit{ font-size:11.5px; }
+}
 .export-value{
   flex:1 1 auto; width:100%; text-align:right; font-size:13.5px; font-weight:400;
   font-variant-numeric:tabular-nums; color:#1A1A1A; line-height:inherit;
@@ -243,8 +279,7 @@ table.board td input[type="number"]::-webkit-inner-spin-button{ -webkit-appearan
   <div class="panel">
     <div id="captureArea">
       <div class="sheet-title-bar">
-        <span class="date-chip">
-          <input type="date" id="dateInput" class="date-native">
+        <span class="date-chip" id="dateChip" role="button" tabindex="0">
           <span class="date-display" id="dateDisplay"></span>
         </span>
         <span class="titlebar-title">투자센터대구WM 칭찬게시판</span>
@@ -287,7 +322,6 @@ table.board td input[type="number"]::-webkit-inner-spin-button{ -webkit-appearan
         <tbody id="boardBody"></tbody>
       </table>
     </div>
-    <p class="hint">※ 위 제목줄의 날짜 칩을 누르면 그 날짜의 실적을 불러와서 보여줘요. 값을 입력하면 지금 선택된 날짜에 자동으로 저장되니, 다른 날짜를 골랐다가 다시 돌아와도 그대로 남아있어요. 그 날짜에 있던 직원 명단도 그대로 함께 기록되므로, 나중에 직원 명단이 바뀌어도 지난 날짜의 시트에는 그날 등록되어 있던 직원 그대로 남아요. 왼쪽에서 직원을 등록하면 오늘 시트에 바로 행이 생기고, 각 칸(수익, 주식매매, 자산증대, 연금자산, 금융상품, Wrap, 상세내용)을 눌러 직접 입력하면 실시간으로 저장되고 합계도 자동 계산돼요.</p>
     <div class="btn-row">
       <button class="btn soft" id="tempSaveBtn">현재 실적<br>저장하기</button>
       <button class="btn soft" id="resetAllBtn">전체<br>초기화</button>
@@ -656,25 +690,116 @@ table.board td input[type="number"]::-webkit-inner-spin-button{ -webkit-appearan
     if(el) el.textContent = state.date ? formatDate(state.date) : "날짜 선택";
   }
 
-  // ---------- date switching (loads/saves per-date sheet) ----------
-  var dateChipEl = document.querySelector(".date-chip");
-  if(dateChipEl){
-    dateChipEl.addEventListener("click", function(){
-      var input = document.getElementById("dateInput");
-      if(input.showPicker){
-        try{ input.showPicker(); }catch(e){}
-      } else {
-        input.focus();
-      }
+  // ---------- custom calendar popup (date switching; loads/saves per-date sheet) ----------
+  var calEl = null;
+  var calViewYear, calViewMonth; // 0-based month
+
+  function pad2(n){ return String(n).padStart(2, "0"); }
+  function ymd(y, m, d){ return y + "-" + pad2(m + 1) + "-" + pad2(d); }
+
+  function buildCalendarPopup(){
+    if(calEl) return calEl;
+    calEl = document.createElement("div");
+    calEl.className = "calendar-popup hidden";
+    calEl.innerHTML =
+      '<div class="cal-header">' +
+        '<button type="button" class="cal-nav" id="calPrevBtn">‹</button>' +
+        '<span class="cal-title" id="calTitle"></span>' +
+        '<button type="button" class="cal-nav" id="calNextBtn">›</button>' +
+      '</div>' +
+      '<div class="cal-grid" id="calGrid"></div>' +
+      '<button type="button" class="cal-today-btn" id="calTodayBtn">오늘로 이동</button>';
+    document.getElementById("dateChip").appendChild(calEl);
+    calEl.addEventListener("click", function(e){ e.stopPropagation(); });
+    document.getElementById("calPrevBtn").addEventListener("click", function(){
+      calViewMonth--; if(calViewMonth < 0){ calViewMonth = 11; calViewYear--; } renderCalendar();
+    });
+    document.getElementById("calNextBtn").addEventListener("click", function(){
+      calViewMonth++; if(calViewMonth > 11){ calViewMonth = 0; calViewYear++; } renderCalendar();
+    });
+    document.getElementById("calTodayBtn").addEventListener("click", function(){
+      var t = new Date();
+      calViewYear = t.getFullYear(); calViewMonth = t.getMonth();
+      renderCalendar();
+      pickDate(todayStr());
+    });
+    return calEl;
+  }
+
+  function renderCalendar(){
+    var titleEl = document.getElementById("calTitle");
+    var gridEl = document.getElementById("calGrid");
+    titleEl.textContent = calViewYear + "년 " + (calViewMonth + 1) + "월";
+
+    var dows = ["일","월","화","수","목","금","토"];
+    var html = dows.map(function(d){ return '<div class="cal-dow">' + d + '</div>'; }).join("");
+
+    var firstDow = new Date(calViewYear, calViewMonth, 1).getDay();
+    var daysInMonth = new Date(calViewYear, calViewMonth + 1, 0).getDate();
+    var prevMonthDays = new Date(calViewYear, calViewMonth, 0).getDate();
+    var todayIso = todayStr();
+
+    var cells = [];
+    for(var i = firstDow - 1; i >= 0; i--){
+      cells.push({ y: calViewMonth === 0 ? calViewYear - 1 : calViewYear, m: calViewMonth === 0 ? 11 : calViewMonth - 1, d: prevMonthDays - i, other: true });
+    }
+    for(var d = 1; d <= daysInMonth; d++){
+      cells.push({ y: calViewYear, m: calViewMonth, d: d, other: false });
+    }
+    var next = 1;
+    while(cells.length % 7 !== 0){
+      cells.push({ y: calViewMonth === 11 ? calViewYear + 1 : calViewYear, m: calViewMonth === 11 ? 0 : calViewMonth + 1, d: next++, other: true });
+    }
+
+    cells.forEach(function(c){
+      var iso = ymd(c.y, c.m, c.d);
+      var cls = "cal-day";
+      if(c.other) cls += " other-month";
+      if(iso === todayIso) cls += " today";
+      if(iso === state.date) cls += " selected";
+      html += '<button type="button" class="' + cls + '" data-iso="' + iso + '">' + c.d + '</button>';
+    });
+    gridEl.innerHTML = html;
+    gridEl.querySelectorAll(".cal-day").forEach(function(btn){
+      btn.addEventListener("click", function(){ pickDate(btn.getAttribute("data-iso")); });
     });
   }
-  ["input","change"].forEach(function(evt){
-    document.getElementById("dateInput").addEventListener(evt, function(e){
-      state.date = e.target.value;
-      saveState(); updateDateDisplay(); renderSheet();
-      showToast(formatDate(state.date) + " 실적을 불러왔어요");
+
+  function pickDate(iso){
+    state.date = iso;
+    saveState(); updateDateDisplay(); renderSheet();
+    showToast(formatDate(state.date) + " 실적을 불러왔어요");
+    closeCalendar();
+  }
+
+  function openCalendar(){
+    var popup = buildCalendarPopup();
+    var base = state.date ? new Date(state.date + "T00:00:00") : new Date();
+    calViewYear = base.getFullYear(); calViewMonth = base.getMonth();
+    renderCalendar();
+    popup.classList.remove("hidden");
+    document.addEventListener("click", outsideCalendarClick, true);
+  }
+  function closeCalendar(){
+    if(calEl) calEl.classList.add("hidden");
+    document.removeEventListener("click", outsideCalendarClick, true);
+  }
+  function outsideCalendarClick(e){
+    var chip = document.getElementById("dateChip");
+    if(chip && !chip.contains(e.target)) closeCalendar();
+  }
+
+  var dateChipEl = document.getElementById("dateChip");
+  if(dateChipEl){
+    dateChipEl.addEventListener("click", function(e){
+      e.stopPropagation();
+      if(calEl && !calEl.classList.contains("hidden")){ closeCalendar(); }
+      else { openCalendar(); }
     });
-  });
+    dateChipEl.addEventListener("keydown", function(e){
+      if(e.key === "Enter" || e.key === " "){ e.preventDefault(); dateChipEl.click(); }
+    });
+  }
 
 
   // ---------- final image ----------
@@ -778,7 +903,7 @@ table.board td input[type="number"]::-webkit-inner-spin-button{ -webkit-appearan
       var naturalH = target.scrollHeight;
       var ratio = 420 / 297;
       var neededW = naturalH * ratio;
-      var factor = Math.min(Math.max(neededW / naturalW, 1), 1.6);
+      var factor = Math.min(Math.max(neededW / naturalW, 1.1), 1.6);
       if(factor > 1.02){
         colInfo = widenColumnsUniformly(target, factor);
         if(colInfo){
@@ -903,7 +1028,6 @@ table.board td input[type="number"]::-webkit-inner-spin-button{ -webkit-appearan
         state = JSON.parse(raw);
         migrateFixNames();
         saveState();
-        document.getElementById("dateInput").value = state.date;
         updateDateDisplay();
         renderRoster();
         renderSheet();
@@ -1009,7 +1133,6 @@ table.board td input[type="number"]::-webkit-inner-spin-button{ -webkit-appearan
   loadState();
   state.title = "투자센터대구WM 칭찬게시판";
   if(state.date !== todayStr()){ state.date = todayStr(); }
-  document.getElementById("dateInput").value = state.date;
   updateDateDisplay();
 
   renderRoster();
