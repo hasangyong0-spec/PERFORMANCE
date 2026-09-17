@@ -33,7 +33,7 @@ html, body{ overflow-x:hidden; max-width:100%; }
 body{margin:0;background:var(--surface-subtle);color:var(--body);line-height:1.6;font-variant-numeric:tabular-nums;font-family:var(--font-kr);}
 button,input,select,textarea{font-family:inherit;}
 
-header.mast{ background:var(--secondary); position:relative; padding:34px 20px 26px; }
+header.mast{ background:var(--secondary); position:relative; padding:24px 20px 18px; }
 .mast-inner{ max-width:1280px; margin:0 auto; text-align:center; }
 .mast-textblock{ display:inline-grid; justify-items:center; }
 .mast-title{ margin:0 0 8px; display:flex; align-items:baseline; justify-content:center; gap:8px; flex-wrap:nowrap; white-space:nowrap; }
@@ -42,7 +42,7 @@ header.mast{ background:var(--secondary); position:relative; padding:34px 20px 2
 .mast-sub{ font-size:12px; color:rgba(255,255,255,0.6); margin:0; text-align:center; }
 .mast-rule{ height:2px; background:var(--primary); position:absolute; bottom:0; left:0; right:0; }
 @media (max-width:480px){
-  header.mast{ padding:18px 14px 14px; }
+  header.mast{ padding:14px 14px 10px; }
   .mast-title{ flex-direction:column; align-items:center; justify-content:center; gap:2px; white-space:normal; }
   .mast-title-sub, .mast-title-main{ white-space:nowrap; }
   .mast-sub{ white-space:nowrap; overflow:hidden; }
@@ -394,7 +394,6 @@ table.board td input[type="number"]::-webkit-inner-spin-button{ -webkit-appearan
       <button class="btn soft lg" id="addRosterBtn">명단에 등록</button>
       <button class="btn navy-soft lg" id="toggleRosterBtn" type="button"></button>
     </div>
-    <button class="btn ghost block" id="dedupeRosterBtn" type="button">중복 명단 정리</button>
     <div id="rosterGroups" style="margin-top:14px; display:none;"></div>
     <p class="hint">여기서 등록·삭제하는 즉시 위 시트에 행이 추가·삭제돼요. 팀명·직원명·직급은 시트에 미리 채워지고, 실적 항목은 시트 칸을 직접 눌러 입력하시면 됩니다.</p>
   </div>
@@ -779,35 +778,6 @@ import { getDatabase, ref, onValue, set, update, remove, get, child }
   });
   document.getElementById("rosterNameInput").addEventListener("keydown", function(e){
     if(e.key === "Enter"){ e.preventDefault(); document.getElementById("addRosterBtn").click(); }
-  });
-
-  document.getElementById("dedupeRosterBtn").addEventListener("click", function(){
-    var groups = {};
-    state.roster.forEach(function(m){
-      var key = m.team + "|" + m.name;
-      if(!groups[key]) groups[key] = [];
-      groups[key].push(m);
-    });
-    var toRemove = [];
-    Object.keys(groups).forEach(function(key){
-      var list = groups[key];
-      if(list.length <= 1) return;
-      list.sort(function(a, b){
-        var oa = (a.order !== undefined) ? a.order : 999999;
-        var ob = (b.order !== undefined) ? b.order : 999999;
-        return oa - ob;
-      });
-      // 순번이 가장 빠른(원래) 한 명만 남기고 나머지는 삭제 대상으로 표시
-      for(var i = 1; i < list.length; i++) toRemove.push(list[i]);
-    });
-    if(toRemove.length === 0){
-      showToast("중복된 직원이 없어요");
-      return;
-    }
-    showConfirm(toRemove.length + "명의 중복된 직원을 명단에서 정리할까요? (남은 한 명은 그대로 유지돼요)", function(){
-      toRemove.forEach(function(m){ rosterRemove(m.id); });
-      showToast(toRemove.length + "명의 중복 명단을 정리했어요");
-    });
   });
 
   // ---------- sheet (result-first, inline editable) ----------
