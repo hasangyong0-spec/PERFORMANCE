@@ -355,7 +355,10 @@ table.board td input[type="number"]::-webkit-inner-spin-button{ -webkit-appearan
         <tbody id="boardBody"></tbody>
       </table>
     </div>
-    <button class="btn block big" id="downloadBtn">최종 칭찬게시판 이미지로 만들기</button>
+    <div class="btn-row">
+      <button class="btn big" id="downloadBtn">이미지 다운로드</button>
+      <button class="btn big soft" id="pdfDownloadBtn">PDF 다운로드</button>
+    </div>
   </div>
 
   <div class="section-divider"></div>
@@ -414,6 +417,7 @@ table.board td input[type="number"]::-webkit-inner-spin-button{ -webkit-appearan
 <div class="toast" id="toast"></div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
@@ -1030,37 +1034,42 @@ import { getDatabase, ref, onValue, set, update, remove, get, child }
 
 
   // ---------- final image ----------
-  function saveBlobAs(blob, filename){
+  function saveBlobAs(blob, filename, opts){
+    opts = opts || {};
+    var description = opts.description || "PNG 이미지";
+    var accept = opts.accept || { "image/png": [".png"] };
+    var savedMsg = opts.savedMsg || "최종본 이미지를 저장했어요";
+    var downloadedMsg = opts.downloadedMsg || "최종본 이미지를 다운로드했어요";
     if(window.showSaveFilePicker){
       try{
         window.showSaveFilePicker({
           suggestedName: filename,
-          types: [{ description: "PNG 이미지", accept: { "image/png": [".png"] } }]
+          types: [{ description: description, accept: accept }]
         }).then(function(handle){
           return handle.createWritable().then(function(writable){
             return writable.write(blob).then(function(){ return writable.close(); });
           });
         }).then(function(){
-          showToast("최종본 이미지를 저장했어요");
+          showToast(savedMsg);
         }).catch(function(err){
           if(err && err.name === "AbortError") return; // 사용자가 저장 취소함
-          fallbackDownload(blob, filename);
+          fallbackDownload(blob, filename, downloadedMsg);
         });
       }catch(e){
-        fallbackDownload(blob, filename);
+        fallbackDownload(blob, filename, downloadedMsg);
       }
     } else {
-      fallbackDownload(blob, filename);
+      fallbackDownload(blob, filename, downloadedMsg);
     }
   }
 
-  function fallbackDownload(blob, filename){
+  function fallbackDownload(blob, filename, downloadedMsg){
     var url = URL.createObjectURL(blob);
     var a = document.createElement("a");
     a.href = url; a.download = filename;
     document.body.appendChild(a); a.click(); document.body.removeChild(a);
     setTimeout(function(){ URL.revokeObjectURL(url); }, 2000);
-    showToast("최종본 이미지를 다운로드했어요");
+    showToast(downloadedMsg || "다운로드했어요");
   }
 
   function widenColumnsUniformly(target, factor){
@@ -1103,10 +1112,8 @@ import { getDatabase, ref, onValue, set, update, remove, get, child }
     });
   }
 
-  document.getElementById("downloadBtn").addEventListener("click", function(){
-    if(typeof html2canvas === "undefined"){ showToast("이미지 생성 라이브러리를 불러오지 못했어요"); return; }
-    showToast("이미지를 만들고 있어요...");
-
+  function buildFinalPageCanvas(){
+    if(typeof html2canvas === "undefined"){ return Promise.reject(new Error("no-html2canvas")); }
     var ready = (document.fonts && document.fonts.ready) ? document.fonts.ready : Promise.resolve();
     var target = document.getElementById("captureArea");
     var swapped = null;
@@ -1115,7 +1122,18 @@ import { getDatabase, ref, onValue, set, update, remove, get, child }
     var originalZoom = target.style.zoom;
     var colInfo = null;
 
-    ready.then(function(){
+    function cleanup(){
+      target.classList.remove("exporting");
+      if(swapped) restoreNumberInputsAfterExport(swapped);
+      target.style.zoom = originalZoom;
+      if(widened){
+        target.style.width = originalWidth;
+        restoreColumnWidths(colInfo);
+        target.querySelectorAll("textarea[data-field='detail']").forEach(autoGrow);
+      }
+    }
+
+    return ready.then(function(){
       // 핀치줌 상태와 무관하게 항상 원본 크기로 캡처되도록 잠시 100%로 되돌린다.
       target.style.zoom = 1;
       // 상세내용 칸의 줄바꿈 높이를 최신 폰트 기준으로 다시 계산 (잘림 방지 여유값 포함)
@@ -1142,14 +1160,7 @@ import { getDatabase, ref, onValue, set, update, remove, get, child }
 
       return html2canvas(target, { scale: 2, backgroundColor: "#ffffff" });
     }).then(function(contentCanvas){
-      target.classList.remove("exporting");
-      restoreNumberInputsAfterExport(swapped);
-      target.style.zoom = originalZoom;
-      if(widened){
-        target.style.width = originalWidth;
-        restoreColumnWidths(colInfo);
-        target.querySelectorAll("textarea[data-field='detail']").forEach(autoGrow);
-      }
+      cleanup();
 
       // 가로폭은 A3 가로 페이지 전체를 항상 꽉 채우고, 세로 길이는 그 폭 배율에 맞춰
       // 자연스럽게 정해진다(내용이 원래보다 유독 길면 페이지가 그만큼만 더 길어진다).
@@ -1171,23 +1182,61 @@ import { getDatabase, ref, onValue, set, update, remove, get, child }
       ctx.fillRect(0, 0, pageW, pageH);
       ctx.drawImage(contentCanvas, 0, 0, contentCanvas.width, contentCanvas.height, dx, dy, destW, destH);
 
-      return new Promise(function(resolve){
-        pageCanvas.toBlob(function(blob){ resolve(blob); });
-      });
+      return pageCanvas;
+    }).catch(function(err){
+      cleanup();
+      throw err;
+    });
+  }
+
+  function buildFileBaseName(){
+    return (state.title || "praise-board").replace(/[\\/:*?"<>|]/g, "") + (state.date ? ("_" + state.date) : "") + "_A3";
+  }
+
+  document.getElementById("downloadBtn").addEventListener("click", function(){
+    showToast("이미지를 만들고 있어요...");
+    buildFinalPageCanvas().then(function(pageCanvas){
+      return new Promise(function(resolve){ pageCanvas.toBlob(function(blob){ resolve(blob); }); });
     }).then(function(blob){
       if(!blob){ showToast("이미지 생성에 실패했어요"); return; }
-      var fname = (state.title || "praise-board").replace(/[\\/:*?"<>|]/g, "") + (state.date ? ("_" + state.date) : "") + "_A3.png";
-      saveBlobAs(blob, fname);
+      saveBlobAs(blob, buildFileBaseName() + ".png", {
+        description: "PNG 이미지",
+        accept: { "image/png": [".png"] },
+        savedMsg: "최종본 이미지를 저장했어요",
+        downloadedMsg: "최종본 이미지를 다운로드했어요"
+      });
     }).catch(function(){
-      target.classList.remove("exporting");
-      if(swapped) restoreNumberInputsAfterExport(swapped);
-      target.style.zoom = originalZoom;
-      if(widened){
-        target.style.width = originalWidth;
-        restoreColumnWidths(colInfo);
-        target.querySelectorAll("textarea[data-field='detail']").forEach(autoGrow);
-      }
       showToast("이미지 생성에 실패했어요");
+    });
+  });
+
+  document.getElementById("pdfDownloadBtn").addEventListener("click", function(){
+    if(typeof window.jspdf === "undefined"){ showToast("PDF 라이브러리를 불러오지 못했어요"); return; }
+    showToast("PDF를 만들고 있어요...");
+    buildFinalPageCanvas().then(function(pageCanvas){
+      var imgData = pageCanvas.toDataURL("image/png");
+      var jsPDF = window.jspdf.jsPDF;
+      var pdf = new jsPDF({ orientation: "landscape", unit: "mm", format: "a3" });
+      var pageW = pdf.internal.pageSize.getWidth();
+      var pageH = pdf.internal.pageSize.getHeight();
+      var imgRatio = pageCanvas.height / pageCanvas.width;
+      var drawW = pageW;
+      var drawH = pageW * imgRatio;
+      if(drawH > pageH){ drawH = pageH; drawW = pageH / imgRatio; }
+      var offsetX = (pageW - drawW) / 2;
+      var offsetY = (pageH - drawH) / 2;
+      pdf.addImage(imgData, "PNG", offsetX, offsetY, drawW, drawH);
+      return pdf.output("blob");
+    }).then(function(blob){
+      if(!blob){ showToast("PDF 생성에 실패했어요"); return; }
+      saveBlobAs(blob, buildFileBaseName() + ".pdf", {
+        description: "PDF 문서",
+        accept: { "application/pdf": [".pdf"] },
+        savedMsg: "최종본 PDF를 저장했어요",
+        downloadedMsg: "최종본 PDF를 다운로드했어요"
+      });
+    }).catch(function(){
+      showToast("PDF 생성에 실패했어요");
     });
   });
 
