@@ -35,9 +35,10 @@ button,input,select,textarea{font-family:inherit;}
 
 header.mast{ background:var(--secondary); position:relative; padding:34px 20px 26px; }
 .mast-inner{ max-width:1280px; margin:0 auto; }
+.mast-textblock{ display:inline-grid; }
 .mast-title{ margin:0 0 8px; display:flex; align-items:baseline; gap:8px; flex-wrap:nowrap; white-space:nowrap; }
-.mast-title-sub{ color:var(--primary); font-weight:700; letter-spacing:0.2px; font-size:clamp(14px, 4.4vw, 34px); }
-.mast-title-main{ color:#fff; font-weight:700; letter-spacing:-0.3px; font-size:clamp(16px, 5.1vw, 40px); }
+.mast-title-sub{ color:var(--primary); font-weight:700; letter-spacing:0.2px; font-size:clamp(15px, 4.9vw, 38px); }
+.mast-title-main{ color:#fff; font-weight:700; letter-spacing:-0.3px; font-size:clamp(17px, 5.6vw, 44px); }
 .mast-sub{ font-size:12px; color:rgba(255,255,255,0.6); margin:0; }
 .mast-rule{ height:2px; background:var(--primary); position:absolute; bottom:0; left:0; right:0; }
 @media (max-width:380px){
@@ -170,11 +171,13 @@ table.board td input[type="number"]::-webkit-inner-spin-button{ -webkit-appearan
 
 <header class="mast">
   <div class="mast-inner">
-    <h1 class="mast-title">
-      <span class="mast-title-sub">미래에셋증권 투자센터대구WM</span>
-      <span class="mast-title-main">칭찬게시판</span>
-    </h1>
-    <p class="mast-sub">직원을 등록하면 아래 시트가 자동으로 만들어져요. 셀을 눌러 실적을 바로 입력하세요.</p>
+    <div class="mast-textblock">
+      <h1 class="mast-title">
+        <span class="mast-title-sub">미래에셋증권 투자센터대구WM</span>
+        <span class="mast-title-main">칭찬게시판</span>
+      </h1>
+      <p class="mast-sub">직원을 등록하면 아래 시트가 자동으로 만들어져요. 셀을 눌러 실적을 바로 입력하세요.</p>
+    </div>
   </div>
   <div class="mast-rule"></div>
 </header>
@@ -253,10 +256,6 @@ table.board td input[type="number"]::-webkit-inner-spin-button{ -webkit-appearan
         <div>
           <span class="step-flag title">실적 입력 시트</span>
         </div>
-        <div class="btn-row">
-          <button class="btn ghost" id="fillSampleBtn">샘플 값 채우기</button>
-          <button class="btn ghost" id="resetAllBtn">전체 초기화</button>
-        </div>
       </div>
       <div class="section-rule"></div>
       <div id="captureArea">
@@ -300,6 +299,10 @@ table.board td input[type="number"]::-webkit-inner-spin-button{ -webkit-appearan
         </table>
       </div>
       <p class="hint">※ 왼쪽에서 직원을 등록하면 이 시트에 바로 행이 생겨요. 각 칸(수익, 주식매매, 자산증대, 연금자산, 금융상품, Wrap, 상세내용)을 눌러 직접 입력하면 실시간으로 저장되고 합계도 자동 계산돼요.</p>
+      <div class="btn-row">
+        <button class="btn" id="tempSaveBtn">현재 실적 저장</button>
+        <button class="btn" id="resetAllBtn">전체 초기화</button>
+      </div>
       <button class="btn block big" id="downloadBtn">최종 칭찬게시판 이미지로 만들기</button>
       </div>
     </div>
@@ -350,16 +353,6 @@ table.board td input[type="number"]::-webkit-inner-spin-button{ -webkit-appearan
     {team:"직할",name:"배철민",position:"PB이사"},
     {team:"직할",name:"박경애",position:"수석매니저"}
   ];
-
-  var SAMPLE_VALUES = {
-    "장동식":{}, "박주영":{profit:100,stockDomestic:2,detail:"반도체 top10 매도"},
-    "손순도":{profit:200,stockDomestic:4,pension:3.2,detail:"나스닥/S&P500/나스닥100 매수 / 퇴직연금IRP 입금"},
-    "정가은":{stockDomestic:0.3,detail:"나스닥 S&P 매수"},
-    "김재은":{assetDomestic:0.3,detail:"달러환전"},
-    "정효진":{profit:50,assetOverseas:1.4,fin:0.37,detail:"자산배분 1.4억(달러환전) / 금융상품 0.37억 (ELS 청약)"},
-    "한영숙":{profit:150,assetOverseas:1,detail:"브라질국채"},
-    "주호준":{assetOverseas:0.25,detail:"달러환전"}
-  };
 
   function withIds(list){ return list.map(function(m){ return Object.assign({id:uid()}, m); }); }
   function uid(){ return "e" + Date.now() + Math.floor(Math.random()*1000); }
@@ -635,19 +628,23 @@ table.board td input[type="number"]::-webkit-inner-spin-button{ -webkit-appearan
     });
   });
 
-  // ---------- sample / reset ----------
-  document.getElementById("fillSampleBtn").addEventListener("click", function(){
-    if(!confirm("등록된 직원 중 이름이 일치하는 항목에 샘플 값을 채워요. 계속할까요?")) return;
-    var filled = 0;
-    state.roster.forEach(function(m){
-      if(SAMPLE_VALUES[m.name]){
-        state.values[m.id] = Object.assign({}, SAMPLE_VALUES[m.name]);
-        filled++;
-      }
-    });
+  // ---------- temp save / reset ----------
+  function todayStr(){
+    var d = new Date();
+    var mm = String(d.getMonth()+1).padStart(2,"0");
+    var dd = String(d.getDate()).padStart(2,"0");
+    return d.getFullYear() + "-" + mm + "-" + dd;
+  }
+
+  document.getElementById("tempSaveBtn").addEventListener("click", function(){
+    var today = todayStr();
+    state.history[today] = {
+      title: state.title,
+      roster: JSON.parse(JSON.stringify(state.roster)),
+      values: JSON.parse(JSON.stringify(state.values))
+    };
     saveState();
-    renderSheet();
-    showToast(filled > 0 ? (filled + "명에 샘플 값을 채웠어요") : "일치하는 이름이 없어요");
+    showToast(formatDate(today) + " 지난 실적 자료실에 저장했어요");
   });
 
   document.getElementById("resetAllBtn").addEventListener("click", function(){
