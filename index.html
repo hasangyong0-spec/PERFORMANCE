@@ -111,14 +111,21 @@ input:focus, select:focus{ outline:none; border-color:var(--primary); box-shadow
   font-size:12px; font-weight:700; color:var(--secondary);
   border-left:3px solid var(--primary); padding-left:8px; margin-bottom:7px;
 }
-.chip-list{ display:flex; flex-wrap:wrap; gap:6px; }
+.chip-list{ display:flex; flex-direction:column; gap:5px; }
 .chip{
-  display:flex; align-items:center; gap:6px; background:var(--surface-soft);
-  border:1px solid var(--hairline); border-radius:2px; padding:5px 6px 5px 12px; font-size:12.5px; color:var(--body-strong);
+  display:flex; align-items:center; gap:8px; background:var(--surface-soft);
+  border:1px solid var(--hairline); border-radius:4px; padding:7px 8px 7px 6px; font-size:12.5px; color:var(--body-strong);
 }
-.chip .pos{ color:var(--muted); font-size:11.5px; }
+.chip.dragging{ opacity:0.5; background:var(--surface-subtle); }
+.drag-handle{
+  cursor:grab; touch-action:none; color:var(--muted-soft); font-size:15px; line-height:1;
+  padding:2px 4px; flex-shrink:0; user-select:none;
+}
+.drag-handle:active{ cursor:grabbing; }
+.chip-name{ font-weight:600; }
+.chip .pos{ color:var(--muted); font-size:11.5px; margin-left:auto; }
 .chip button{
-  border:none; background:var(--hairline); color:var(--ink); width:16px; height:16px; border-radius:50%;
+  border:none; background:var(--hairline); color:var(--ink); width:18px; height:18px; border-radius:50%;
   font-size:10px; line-height:1; cursor:pointer; display:flex; align-items:center; justify-content:center; flex-shrink:0;
 }
 .empty{ color:var(--muted); font-size:12.5px; text-align:center; padding:16px 0; }
@@ -676,6 +683,7 @@ import { getDatabase, ref, onValue, set, update, remove, get, child }
     teams.forEach(function(team){
       var group = document.createElement("div");
       group.className = "roster-group";
+      group.setAttribute("data-team", team);
       var title = document.createElement("div");
       title.className = "roster-group-title";
       title.textContent = team;
@@ -685,7 +693,11 @@ import { getDatabase, ref, onValue, set, update, remove, get, child }
       state.roster.filter(function(m){ return m.team === team; }).forEach(function(m){
         var chip = document.createElement("div");
         chip.className = "chip";
-        chip.innerHTML = '<span>' + escapeHtml(m.name) + '</span><span class="pos">' + escapeHtml(m.position) + '</span>';
+        chip.setAttribute("data-id", m.id);
+        chip.innerHTML =
+          '<span class="drag-handle" title="눌러서 순서 변경">⠿</span>' +
+          '<span class="chip-name">' + escapeHtml(m.name) + '</span>' +
+          '<span class="pos">' + escapeHtml(m.position) + '</span>';
         var btn = document.createElement("button");
         btn.textContent = "\u00d7";
         btn.addEventListener("click", function(){
@@ -693,9 +705,64 @@ import { getDatabase, ref, onValue, set, update, remove, get, child }
         });
         chip.appendChild(btn);
         chipList.appendChild(chip);
+        enableChipDrag(chip);
       });
       group.appendChild(chipList);
       box.appendChild(group);
+    });
+  }
+
+  // ---------- 명단 순서 드래그로 변경 (PC 마우스 / 모바일 터치 공통, Pointer Events) ----------
+  function enableChipDrag(chip){
+    var handle = chip.querySelector(".drag-handle");
+    handle.addEventListener("pointerdown", function(e){
+      e.preventDefault();
+      var listEl = chip.parentElement;
+      chip.setPointerCapture(e.pointerId);
+      chip.classList.add("dragging");
+
+      function onMove(ev){
+        var y = ev.clientY;
+        var siblings = Array.prototype.slice.call(listEl.children);
+        var curIndex = siblings.indexOf(chip);
+        for(var i = 0; i < siblings.length; i++){
+          if(siblings[i] === chip) continue;
+          var rect = siblings[i].getBoundingClientRect();
+          var mid = rect.top + rect.height / 2;
+          if(y < mid && i < curIndex){
+            listEl.insertBefore(chip, siblings[i]);
+            break;
+          } else if(y > mid && i > curIndex){
+            listEl.insertBefore(chip, siblings[i].nextSibling);
+            break;
+          }
+        }
+      }
+      function onUp(){
+        try{ chip.releasePointerCapture(e.pointerId); }catch(err){}
+        chip.classList.remove("dragging");
+        document.removeEventListener("pointermove", onMove);
+        document.removeEventListener("pointerup", onUp);
+        commitRosterOrder();
+      }
+      document.addEventListener("pointermove", onMove);
+      document.addEventListener("pointerup", onUp);
+    });
+  }
+
+  function commitRosterOrder(){
+    var teams = getRosterTeams();
+    var idx = 0;
+    var updates = [];
+    teams.forEach(function(team){
+      var groupEl = document.querySelector('.roster-group[data-team="' + CSS.escape(team) + '"] .chip-list');
+      if(!groupEl) return;
+      Array.prototype.forEach.call(groupEl.children, function(chip){
+        updates.push({ id: chip.getAttribute("data-id"), order: idx++ });
+      });
+    });
+    updates.forEach(function(u){
+      update(child(rosterRef, u.id), { order: u.order }).catch(function(){});
     });
   }
 
